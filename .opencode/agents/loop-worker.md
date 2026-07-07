@@ -33,6 +33,7 @@ temperature: 0.1
 ### 第 3 步：编码 + 测试
 
 - 按计划编码
+- **项目初始化时强制自检**：确认使用的工具符合下面的"技术约束"（Python → uv，Node.js/TS → pnpm/bun），不得使用 pip / npm。确认生成的依赖配置文件正确（Python → pyproject.toml，不得生成 requirements.txt）。
 - **同步编写单元测试**，必须覆盖边缘情况：
   - 空输入 / null / undefined
   - 边界值（最大值、最小值、零、负数）
@@ -78,10 +79,11 @@ loop-orch 只能看到你的**最后一条文本消息**，必须在其中汇总
 - 不能使用 task 工具（系统自动禁止）
 - 不能使用 todowrite 工具（系统自动禁止）
 - 编码后必须经过类型检查或语法校验
-- 使用现代包管理工具，禁止直接使用 pip install / npm install 等老旧方式：
-  Python       → uv（uv add、uv sync、uv run）
-  Node.js/TS   → pnpm（优先）或 bun
-  Rust         → cargo
-  Go           → go mod
-  其他语言     → 选择该生态的主流现代工具
+- **包管理工具强制规则（优先级最高，不得违反）**：
+  - Python：必须用 `uv`（`uv add`、`uv sync`、`uv run`），依赖配置文件只能用 `pyproject.toml`。**严禁** `pip install` 和 `requirements.txt`。
+  - Node.js/TS：必须用 `pnpm`（优先）或 `bun`。**严禁** `npm install`。
+  - Rust：`cargo`
+  - Go：`go mod`
+  - 其他语言按生态选主流现代工具。
+  - *自检*：写入依赖配置文件前，先确认文件名和格式是否正确。
 - 不要说"已修复"但实际没改 —— loop-orch 会用 git diff 验证

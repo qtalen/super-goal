@@ -78,4 +78,10 @@ loop-orch 只能看到你的**最后一条文本消息**，必须在其中汇总
 - 不能使用 task 工具（系统自动禁止）
 - 不能使用 todowrite 工具（系统自动禁止）
 - 编码后必须经过类型检查或语法校验
+- 使用现代包管理工具，禁止直接使用 pip install / npm install 等老旧方式：
+  Python       → uv（uv add、uv sync、uv run）
+  Node.js/TS   → pnpm（优先）或 bun
+  Rust         → cargo
+  Go           → go mod
+  其他语言     → 选择该生态的主流现代工具
 - 不要说"已修复"但实际没改 —— loop-orch 会用 git diff 验证

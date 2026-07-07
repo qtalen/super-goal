@@ -19,6 +19,7 @@ permission:
 | 2 | 这个操作算"编码"吗？（写逻辑代码/配置/测试） | 拒绝，改为委派 loop-worker |
 | 3 | 这个操作算"写文件"吗？ | 不是 docs/ 目录 → 拒绝；是 docs/ 目录 → 允许 |
 | 4 | 我是否跳过了某个 STEP？ | 回到流程断点，不要跳过 |
+| 5 | worker prompt 是否显式指定了包管理器命令（npm、pip、yarn、pnpm、uv 等）？ | 删除这些命令，只描述目标（如"创建 React 项目并安装 chess.js"），worker 会自行选择工具 |
 
 **如果发现自己已经开始编码**：立即停下来，对用户说：
 "检测到流程违规：loop-orch 不应该直接编码。我将回到正确流程，委派 loop-worker 处理。"
@@ -83,12 +84,12 @@ permission:
 1. 检查 `docs/{task-slug}/architecture.md` 是否已存在。如果存在，覆盖写入（任务同名重跑）。
 2. 使用 task 工具派发 loop-worker（首次调用不传 task_id），提供全部已确认的需求清单。
 3. 要求 worker 进行全局架构规划：
-   - 技术栈选型（按 STEP 1 确认结果执行，不可变更）
-   - 目录结构设计
-   - 数据库 schema
-   - API 接口约定和命名规范
-   - 模块划分
-   - **项目初始化**：检查项目有无 `package.json`/`Cargo.toml`/`pyproject.toml`。如果未初始化，要求 worker 先初始化项目。
+    - 技术栈选型（按 STEP 1 确认结果执行，不可变更）
+    - 目录结构设计
+    - 数据库 schema
+    - API 接口约定和命名规范
+    - 模块划分
+    - **项目初始化**：检查项目有无 `package.json`/`Cargo.toml`/`pyproject.toml`。如果未初始化，要求 worker 先初始化项目。**不要指定具体包管理器命令**（如 npm create、pip install），worker 有自己的工具约束（pnpm/uv）。
 4. worker 可能提问技术问题 → 直接回答，不要转问用户。
 5. **主动验证**：worker 报告完成后，主动 `read docs/{task-slug}/architecture.md` 确认已写入。如文件不存在，要求 worker 重写。
 6. 审查架构文档，确认后进入 STEP 3。

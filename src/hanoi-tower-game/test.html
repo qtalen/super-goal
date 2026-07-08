@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tower of Hanoi — State Management Tests</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #F8F9FA;
+      padding: 24px;
+      text-align: center;
+    }
+    #test-results {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #E0E0E0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+    #test-results h2 {
+      margin-bottom: 8px;
+    }
+    #test-results ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 12px;
+    }
+    #test-results li {
+      padding: 3px 0;
+      font-size: 13px;
+    }
+    #test-results li.pass {
+      color: #2D8B2D;
+    }
+    #test-results li.fail {
+      color: #D32F2F;
+    }
+    .note {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tower of Hanoi — State Management Tests</h1>
+  <p class="note">Open Developer Tools → Console for detailed logs</p>
+  <div id="test-results">Loading...</div>
+
+  <!-- Load modules under test -->
+  <script src="js/game-state.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/interaction.js"></script>
+  <script src="test/verify.js"></script>
+</body>
+</html>

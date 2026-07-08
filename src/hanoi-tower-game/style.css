@@ -1,0 +1,259 @@
+/* ===== Global reset & centered layout ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #F8F9FA;
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#app {
+  text-align: center;
+  padding: 20px;
+  max-width: 860px;
+  width: 100%;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #2D3436;
+  user-select: none;
+}
+
+/* ===== Canvas ===== */
+#canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+#hanoi-canvas {
+  width: 800px;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  background-color: #F8F9FA;
+  cursor: pointer;
+  display: block;
+}
+
+/* ===== Controls ===== */
+#controls {
+  background: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.controls-row + .controls-row {
+  margin-top: 12px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #D0D0D0;
+  border-radius: 6px;
+  background-color: #FFFFFF;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background-color: #F0F0F0;
+  border-color: #B0B0B0;
+}
+
+.btn:active {
+  background-color: #E0E0E0;
+}
+
+.btn-primary {
+  background-color: #4DABF7;
+  color: #FFFFFF;
+  border-color: #4DABF7;
+}
+
+.btn-primary:hover {
+  background-color: #3B9AE5;
+  border-color: #3B9AE5;
+}
+
+.btn-primary:active {
+  background-color: #2D8BD6;
+}
+
+.btn-danger {
+  background-color: #FF6B6B;
+  color: #FFFFFF;
+  border-color: #FF6B6B;
+}
+
+.btn-danger:hover {
+  background-color: #E85A5A;
+  border-color: #E85A5A;
+}
+
+.btn-danger:active {
+  background-color: #D14A4A;
+}
+
+/* ===== Selector ===== */
+.control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-group label,
+.control-group .label {
+  font-size: 14px;
+  color: #555;
+  user-select: none;
+}
+
+select {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #D0D0D0;
+  border-radius: 6px;
+  background-color: #FFFFFF;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+select:focus {
+  border-color: #4DABF7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+/* ===== Move count ===== */
+.move-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2D3436;
+  min-width: 24px;
+  display: inline-block;
+}
+
+/* ===== Speed slider ===== */
+.speed-label {
+  font-size: 13px;
+  color: #777;
+  min-width: 48px;
+  text-align: left;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 6px;
+  background: #E0E0E0;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #4DABF7;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #3B9AE5;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #4DABF7;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+/* ===== Hidden state ===== */
+.hidden {
+  display: none !important;
+}
+
+/* ===== Victory overlay ===== */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.victory-card {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  padding: 36px 48px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  max-width: 400px;
+  width: 90%;
+}
+
+.victory-card h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+  color: #2D3436;
+}
+
+.victory-card p {
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.victory-card .btn {
+  font-size: 15px;
+  padding: 10px 32px;
+}

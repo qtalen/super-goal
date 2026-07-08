@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tower of Hanoi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>Tower of Hanoi</h1>
+
+    <div id="canvas-wrapper">
+      <canvas id="hanoi-canvas" width="800" height="450"></canvas>
+    </div>
+
+    <div id="controls">
+      <div class="controls-row">
+        <button id="btn-reset" class="btn">Reset</button>
+        <button id="btn-auto-solve" class="btn btn-primary">Auto Solve</button>
+
+        <div class="control-group">
+          <label for="disk-count">Disks:</label>
+          <select id="disk-count">
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <span class="label">Moves:</span>
+          <span id="move-count" class="move-count">0</span>
+        </div>
+      </div>
+
+      <div id="auto-controls" class="controls-row hidden">
+        <button id="btn-pause" class="btn">Pause</button>
+        <button id="btn-resume" class="btn">Resume</button>
+        <button id="btn-stop" class="btn btn-danger">Stop</button>
+
+        <div class="control-group">
+          <label for="speed-slider">Speed:</label>
+          <input type="range" id="speed-slider" min="200" max="2000" value="500" step="10">
+          <span id="speed-label" class="speed-label">500ms</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Victory overlay -->
+  <div id="victory-overlay" class="overlay hidden">
+    <div class="victory-card">
+      <h2>🎉 Victory!</h2>
+      <p>You completed the Tower of Hanoi in <span id="victory-moves">0</span> moves!</p>
+      <button id="btn-victory-close" class="btn btn-primary">OK</button>
+    </div>
+  </div>
+
+  <!-- JS modules loaded in order -->
+  <script src="js/game-state.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/interaction.js"></script>
+  <script src="js/solver.js"></script>
+  <script>
+    // Initialize: create initial state and render
+    var canvas = document.getElementById('hanoi-canvas');
+    var gameState = createGame(3);
+    var renderer = createRenderer(canvas);
+    renderer.render(gameState);
+    var animation = createAnimation(gameState, renderer);
+
+    // Victory overlay DOM references
+    var victoryOverlay = document.getElementById('victory-overlay');
+    var victoryMoves = document.getElementById('victory-moves');
+
+    // Auto-solve DOM references
+    var autoControls = document.getElementById('auto-controls');
+    var btnPause = document.getElementById('btn-pause');
+    var btnResume = document.getElementById('btn-resume');
+    var btnStop = document.getElementById('btn-stop');
+    var speedSlider = document.getElementById('speed-slider');
+    var speedLabel = document.getElementById('speed-label');
+
+    // Interaction binding
+    var interaction = initInteraction(
+      canvas,
+      gameState,
+      renderer,
+      function (moveCount) {
+        document.getElementById('move-count').textContent = moveCount;
+      },
+      function (newState) {
+        gameState = newState;
+        animation.setState(newState);
+      },
+      function (moveCount) {
+        // Victory: show overlay, update moves, disable interaction
+        victoryMoves.textContent = moveCount;
+        victoryOverlay.classList.remove('hidden');
+        interaction.disable();
+      }
+    );
+
+    // Close victory overlay: hide overlay, restore interaction
+    document.getElementById('btn-victory-close').addEventListener('click', function () {
+      victoryOverlay.classList.add('hidden');
+      interaction.enable();
+    });
+
+    // ---- Requirement #6: Auto-solve animation control ----
+
+    /**
+     * Callback when animation finishes normally
+     * Check victory → trigger overlay → hide auto-solve controls → restore interaction
+     * @param {GameState} state
+     */
+    function onAnimationFinish(state) {
+      // Hide auto-solve controls
+      autoControls.classList.add('hidden');
+
+      // Victory check
+      if (checkWin(state)) {
+        state.isSolved = true;
+        victoryMoves.textContent = state.moveCount;
+        victoryOverlay.classList.remove('hidden');
+        interaction.disable();
+      } else {
+        interaction.enable();
+      }
+    }
+
+    // "Auto Solve" button
+    document.getElementById('btn-auto-solve').addEventListener('click', function () {
+      // If animation is running, stop it first
+      if (animation.isRunning) {
+        animation.stop();
+      }
+
+      // Reset game state in-place (keep gameState object reference, animation and interaction both reference it)
+      var freshState = resetGame(gameState);
+      gameState.pegs = freshState.pegs;
+      gameState.moveCount = 0;
+      gameState.selectedPeg = null;
+      gameState.isSolved = false;
+      gameState.isAnimating = false;
+
+      interaction.setState(gameState);
+      interaction.disable();
+      renderer.render(gameState);
+      document.getElementById('move-count').textContent = '0';
+
+      // Generate optimal solution sequence
+      var moves = solveHanoi(gameState.diskCount, 0, 2, 1);
+
+      // Show auto-solve controls (pause, resume, stop, speed)
+      autoControls.classList.remove('hidden');
+
+      // Start animation, update move count on each step
+      animation.start(moves, onAnimationFinish, function (stepState) {
+        document.getElementById('move-count').textContent = stepState.moveCount;
+      });
+    });
+
+    // Pause button
+    btnPause.addEventListener('click', function () {
+      animation.pause();
+    });
+
+    // Resume button
+    btnResume.addEventListener('click', function () {
+      animation.resume();
+    });
+
+    // Stop button
+    btnStop.addEventListener('click', function () {
+      animation.stop();
+
+      // Restore to stopped state: hide auto-solve controls, restore interaction
+      autoControls.classList.add('hidden');
+      interaction.enable();
+    });
+
+    // Speed slider
+    speedSlider.addEventListener('input', function () {
+      var value = parseInt(this.value, 10);
+      // Edge case: use current value if invalid
+      if (isNaN(value)) return;
+      animation.setSpeed(value);
+      speedLabel.textContent = value + 'ms';
+    });
+
+    // ---- Requirement #5: Reset & difficulty selection ----
+
+    /**
+     * Unified handling after reset/difficulty change
+     * If animation is running → stop it first, then reset
+     * @param {GameState} newState
+     */
+    function afterReset(newState) {
+      // Stop animation if running
+      if (animation.isRunning) {
+        animation.stop();
+      }
+      // Hide auto-solve controls
+      autoControls.classList.add('hidden');
+
+      gameState = newState;
+      interaction.setState(newState);
+      animation.setState(newState);
+      renderer.render(newState);
+      document.getElementById('move-count').textContent = '0';
+      victoryOverlay.classList.add('hidden');
+      interaction.enable();
+    }
+
+    // Reset button
+    document.getElementById('btn-reset').addEventListener('click', function () {
+      afterReset(resetGame(gameState));
+    });
+
+    // Disk count selector
+    document.getElementById('disk-count').addEventListener('change', function () {
+      afterReset(createGame(parseInt(this.value, 10)));
+    });
+  </script>
+  <!-- solver.js already loaded above, old reference removed -->
+</body>
+</html>

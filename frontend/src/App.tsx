@@ -96,9 +96,29 @@ function App() {
     (from: Square, to: Square, promotion?: string) => {
       if (state.gameId) {
         // ── API 模式 ──────────────────────────────────────────────
-        dispatch({ type: 'SET_THINKING', payload: true });
-        setPendingPromotion(null);
+        // 1. 立即显示玩家走子（本地走，不更新历史）
+        try {
+          const chess = new Chess(state.fen);
+          chess.move({ from, to, promotion } as { from: Square; to: Square; promotion?: string });
+          const uci = `${from}${to}`;
 
+          dispatch({
+            type: 'VISUAL_MOVE',
+            payload: {
+              fen: chess.fen(),
+              turn: chess.turn(),
+              status: deriveStatus(chess),
+              lastMove: uci,
+            },
+          });
+        } catch {
+          dispatch({ type: 'SELECT_SQUARE', payload: null });
+          setPendingPromotion(null);
+          return;
+        }
+
+        // 2. 异步请求 AI 应答
+        setPendingPromotion(null);
         chessApi
           .makeMove(state.gameId, from, to, promotion)
           .then((response) => {
@@ -128,7 +148,6 @@ function App() {
           });
           setPendingPromotion(null);
         } catch {
-          // 非法走子：取消选中
           dispatch({ type: 'SELECT_SQUARE', payload: null });
           setPendingPromotion(null);
         }

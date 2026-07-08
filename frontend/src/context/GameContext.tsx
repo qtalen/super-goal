@@ -17,6 +17,7 @@ export type GameAction =
   | { type: 'CREATE_GAME'; payload: GameState }
   | { type: 'SELECT_SQUARE'; payload: string | null }
   | { type: 'MAKE_MOVE'; payload: Partial<GameState> }
+  | { type: 'VISUAL_MOVE'; payload: Partial<GameState> }
   | { type: 'SET_THINKING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'UNDO_MOVE'; payload: Partial<GameState> }
@@ -75,6 +76,18 @@ export function gameReducer(
         error: null,
       };
     }
+
+    case 'VISUAL_MOVE':
+      return {
+        ...state,
+        fen: action.payload.fen ?? state.fen,
+        turn: action.payload.turn ?? state.turn,
+        status: action.payload.status ?? state.status,
+        lastMove: action.payload.lastMove ?? state.lastMove,
+        legalMoves: [],
+        selectedSquare: null,
+        isThinking: true,
+      };
 
     case 'SET_THINKING':
       return { ...state, isThinking: action.payload };

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { chessApi } from './api/chessApi';
 import { useGame } from './context/GameContext';
@@ -74,6 +74,20 @@ function App() {
       return [];
     }
   }, [state.fen, state.selectedSquare]);
+
+  // 页面加载时自动创建一局新游戏（进入 API 模式，激活 AI）
+  // 测试环境中跳过（vitest 环境下 chessApi 被 mock，自动创建无意义）
+  const autoStartRef = useRef(false);
+  useEffect(() => {
+    if (import.meta.env.MODE === 'test') return; // 测试环境跳过（mock 无后端）
+    if (!autoStartRef.current) {
+      autoStartRef.current = true;
+      dispatch({ type: 'SET_THINKING', payload: true });
+      chessApi.createGame(state.difficulty)
+        .then((response) => dispatch({ type: 'CREATE_GAME', payload: response }))
+        .catch((err) => dispatch({ type: 'SET_ERROR', payload: err.message }));
+    }
+  }, []);
 
   /**
    * 执行走子（本地模式走 chess.js，API 模式调用后端）

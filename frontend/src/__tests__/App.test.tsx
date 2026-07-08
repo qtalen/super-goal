@@ -17,9 +17,12 @@ vi.mock('../api/chessApi', () => {
     }
   };
 
+  const mockError = new Error('Server not available (test)');
+  (mockError as any).status = 0;
+
   return {
     chessApi: {
-      createGame: vi.fn(),
+      createGame: vi.fn().mockRejectedValue(mockError),
       makeMove: vi.fn(),
       getGame: vi.fn(),
       getLegalMoves: vi.fn(),

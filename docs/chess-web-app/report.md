@@ -85,3 +85,25 @@ cd frontend && npx vite --host
 - **双模式前端**: 无后端时走本地 chess.js，有后端时走 API
 - **API 类型映射**: 后端 snake_case → 前端 camelCase
 - **升变处理**: 前端弹窗选择棋子，后端统一处理
+
+## Browser E2E 测试结果
+
+通过 `agent-browser` 完成端到端浏览器测试，覆盖完整对局流程。
+
+### 发现并修复的问题
+
+| # | 问题 | 根因 | 修复 |
+|---|------|------|------|
+| 1 | 棋盘只渲染第1行，其余行不可见 | CSS Grid `1fr` + `aspect-ratio: 1` 在行高计算上冲突 | 改用固定 `64px` 列宽/行高，移除 `aspect-ratio` |
+| 2 | 所有 SCSS 样式未加载（棋盘无背景色、无网格） | `main.tsx` 只导入 `global.scss`，未导入 `Board.scss`、`ControlPanel.scss`、`GameStatus.scss` | 在 `main.tsx` 中追加三个 SCSS import |
+| 3 | 白色棋子不可见（混入浅色背景） | `Piece` 的 `.piece--white` 设置 `color: #fff`，在 `#f0d9b5` 浅色格子上几乎不可见 | 改为 `color: #222`，白色文字描边（`text-shadow` 四方描边） |
+| 4 | 列号 a-h 缺失 | CSS Grid 溢出隐藏（`overflow: hidden`），加上格点计算异常导致底部行不可见 | 网格改用固定尺寸 + 显式 `grid-row`/`grid-column` 定位 |
+
+### 验证通过的场景
+
+- 初始棋盘渲染：64格交替色，32枚棋子正确位置 ✅
+- 走子交互：点击e2兵选中 → 点击e4格子走子，棋盘更新 ✅
+- API 模式全流程：新游戏 → e2e4 → AI 应答（Nf6）→ 悔棋按钮启用 ✅
+- 行号（1-8）和列号（a-h）正确标注 ✅
+- 控制面板：难度选择、新游戏按钮、悔棋按钮（禁用/启用状态） ✅
+- 游戏状态显示：回合、进行中/将军等状态文字 ✅

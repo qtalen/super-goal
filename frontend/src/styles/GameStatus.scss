@@ -1,0 +1,43 @@
+.game-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+
+  &__difficulty {
+    font-size: 14px;
+    color: #666;
+  }
+
+  &__turn {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  &__state {
+    font-size: 18px;
+    font-weight: 700;
+    color: #555;
+    padding: 4px 0;
+
+    &--highlight {
+      color: #e74c3c;
+      animation: pulse 1s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

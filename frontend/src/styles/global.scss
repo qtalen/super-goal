@@ -1,0 +1,186 @@
+:root {
+  --color-bg: #1a1a2e;
+  --color-text: #e0e0e0;
+  --color-primary: #4fc3f7;
+  --color-board-light: #f0d9b5;
+  --color-board-dark: #b58863;
+  --color-selected: rgba(255, 215, 0, 0.5);
+  --color-legal-move: rgba(0, 200, 0, 0.4);
+  --color-last-move: rgba(0, 100, 255, 0.15);
+  --color-check: rgba(255, 0, 0, 0.6);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.app h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  color: var(--color-primary);
+}
+
+.app-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.app-board-section {
+  flex-shrink: 0;
+}
+
+.app-sidebar {
+  flex: 1;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ================================================================ */
+/*  Error banner                                                     */
+/* ================================================================ */
+
+.error-banner {
+  background: #fdecea;
+  color: #c0392b;
+  padding: 10px 16px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &__close {
+    cursor: pointer;
+    font-size: 18px;
+    color: #c0392b;
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 0 4px;
+  }
+}
+
+/* ================================================================ */
+/*  升变对话框                                                        */
+/* ================================================================ */
+
+.promotion-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+
+.promotion-dialog {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  &__title {
+    font-size: 1.2rem;
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  &__hint {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 1.2rem;
+  }
+
+  &__buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  &__btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: #0f3460;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+
+    &:hover {
+      border-color: var(--color-primary);
+      background: #1a4a7a;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  &__piece {
+    font-size: 2.5rem;
+    line-height: 1;
+
+    &--w {
+      color: #fff;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    &--b {
+      color: #222;
+      text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    color: var(--color-text);
+  }
+
+  &__cancel {
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 4px;
+    background: #555;
+    color: var(--color-text);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background: #777;
+    }
+  }
+}

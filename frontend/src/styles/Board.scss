@@ -1,0 +1,115 @@
+.board {
+  display: grid;
+  grid-template-columns: 32px repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr) 32px;
+  max-width: 560px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.square {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-size: 2rem;
+  min-width: 60px;
+  min-height: 60px;
+
+  &--light {
+    background-color: var(--color-board-light);
+  }
+
+  &--dark {
+    background-color: var(--color-board-dark);
+  }
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+
+  /* 选中高亮 */
+  &--selected {
+    box-shadow: inset 0 0 0 3px rgba(255, 215, 0, 0.8);
+  }
+
+  /* 合法走法（无吃子 — 绿色圆点） */
+  &--legal-move::after {
+    content: '';
+    position: absolute;
+    width: 28%;
+    height: 28%;
+    border-radius: 50%;
+    background-color: var(--color-legal-move);
+    pointer-events: none;
+  }
+
+  /* 合法走法（有吃子 — 红色边框） */
+  &--legal-capture {
+    box-shadow: inset 0 0 0 3px rgba(255, 50, 50, 0.7);
+  }
+
+  /* 上一步走法 */
+  &--last-move {
+    background-color: var(--color-last-move);
+  }
+
+  /* 将军 — 红色脉冲动画 */
+  &--check {
+    animation: check-pulse 0.8s ease-in-out infinite;
+  }
+}
+
+@keyframes check-pulse {
+  0%, 100% {
+    box-shadow: inset 0 0 0 0 var(--color-check);
+  }
+  50% {
+    box-shadow: inset 0 0 0 4px var(--color-check);
+  }
+}
+
+/* 行列坐标标注 */
+.board__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #888;
+  background: #2a2a3e;
+  user-select: none;
+
+  &--row {
+    grid-column: 1;
+  }
+
+  &--col {
+    grid-row: 9;
+  }
+
+  &--corner {
+    grid-column: 1;
+    grid-row: 9;
+  }
+}
+
+.piece {
+  user-select: none;
+  line-height: 1;
+  font-size: 2.4rem;
+
+  &--white {
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  &--black {
+    color: #222;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+  }
+}

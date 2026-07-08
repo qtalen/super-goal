@@ -1,0 +1,92 @@
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+    select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    &--new-game {
+      background: #4a90d9;
+      color: white;
+      &:hover:not(:disabled) {
+        background: #357abd;
+      }
+    }
+    &--undo {
+      background: #e8e8e8;
+      color: #333;
+      &:hover:not(:disabled) {
+        background: #d0d0d0;
+      }
+    }
+  }
+
+  &__thinking {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #888;
+    font-style: italic;
+  }
+
+  &__spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ccc;
+    border-top-color: #4a90d9;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

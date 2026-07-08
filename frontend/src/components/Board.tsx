@@ -143,7 +143,7 @@ function Board({
   return (
     <div
       role="grid"
-      aria-label="国际象棋棋盘"
+      aria-label="Chess board"
       style={{
         display: 'grid',
         gridTemplateColumns: `${LABEL_SIZE}px repeat(8, ${SQUARE_SIZE}px)`,

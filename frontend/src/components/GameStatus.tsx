@@ -7,11 +7,11 @@ export interface GameStatusProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  playing: '进行中',
-  check: '将军',
-  checkmate: '将杀',
-  stalemate: '逼和',
-  draw: '和棋',
+  playing: 'In Progress',
+  check: 'Check',
+  checkmate: 'Checkmate!',
+  stalemate: 'Stalemate',
+  draw: 'Draw',
 };
 
 function getStatusText(status: string): string {
@@ -23,22 +23,22 @@ function GameStatus({
   status = 'playing',
   difficulty = 2,
 }: GameStatusProps) {
-  const turnText = turn === 'w' ? '白方走' : '黑方走';
+  const turnText = turn === 'w' ? "White's turn" : "Black's turn";
   const statusText = getStatusText(status);
 
   const difficultyLabels: Record<number, string> = {
-    1: '初级',
-    2: '中级',
-    3: '高级',
+    1: 'Beginner',
+    2: 'Intermediate',
+    3: 'Advanced',
   };
   const difficultyText = difficultyLabels[difficulty] ?? String(difficulty);
 
   return (
     <div className="game-status">
-      <h2>游戏状态</h2>
-      <p className="game-status__turn">回合：{turnText}</p>
-      <p className="game-status__state">状态：{statusText}</p>
-      <p className="game-status__difficulty">难度：{difficultyText}</p>
+      <h2>Game Status</h2>
+      <p className="game-status__turn">{turnText}</p>
+      <p className="game-status__state">{statusText}</p>
+      <p className="game-status__difficulty">Difficulty: {difficultyText}</p>
     </div>
   );
 }

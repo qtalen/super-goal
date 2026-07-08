@@ -35,7 +35,7 @@ function Square({
     .filter(Boolean)
     .join(' ');
 
-  const ariaLabel = square || (isLight ? '浅色格子' : '深色格子');
+  const ariaLabel = square || (isLight ? 'light square' : 'dark square');
 
   return (
     <div

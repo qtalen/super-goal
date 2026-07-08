@@ -28,7 +28,7 @@ describe('Board', () => {
 
   it('has accessible aria-label', () => {
     render(<Board {...defaultProps} />);
-    expect(screen.getByLabelText('国际象棋棋盘')).toBeInTheDocument();
+    expect(screen.getByLabelText('Chess board')).toBeInTheDocument();
   });
 
   it('alternates light and dark squares', () => {

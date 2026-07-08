@@ -5,54 +5,54 @@ import GameStatus from '../components/GameStatus';
 describe('GameStatus', () => {
   it('renders heading', () => {
     render(<GameStatus />);
-    expect(screen.getByText('游戏状态')).toBeInTheDocument();
+    expect(screen.getByText('Game Status')).toBeInTheDocument();
   });
 
   it('renders turn indicator for white', () => {
     render(<GameStatus turn="w" />);
-    expect(screen.getByText('回合：白方走')).toBeInTheDocument();
+    expect(screen.getByText("White's turn")).toBeInTheDocument();
   });
 
   it('renders turn indicator for black', () => {
     render(<GameStatus turn="b" />);
-    expect(screen.getByText('回合：黑方走')).toBeInTheDocument();
+    expect(screen.getByText("Black's turn")).toBeInTheDocument();
   });
 
   it('renders state as playing by default', () => {
     render(<GameStatus />);
-    expect(screen.getByText('状态：进行中')).toBeInTheDocument();
+    expect(screen.getByText('In Progress')).toBeInTheDocument();
   });
 
   it('renders check state', () => {
     render(<GameStatus status="check" />);
-    expect(screen.getByText('状态：将军')).toBeInTheDocument();
+    expect(screen.getByText('Check')).toBeInTheDocument();
   });
 
   it('renders checkmate state', () => {
     render(<GameStatus status="checkmate" />);
-    expect(screen.getByText('状态：将杀')).toBeInTheDocument();
+    expect(screen.getByText('Checkmate!')).toBeInTheDocument();
   });
 
   it('renders stalemate state', () => {
     render(<GameStatus status="stalemate" />);
-    expect(screen.getByText('状态：逼和')).toBeInTheDocument();
+    expect(screen.getByText('Stalemate')).toBeInTheDocument();
   });
 
   it('renders draw state', () => {
     render(<GameStatus status="draw" />);
-    expect(screen.getByText('状态：和棋')).toBeInTheDocument();
+    expect(screen.getByText('Draw')).toBeInTheDocument();
   });
 
   it('renders difficulty level', () => {
     render(<GameStatus difficulty={2} />);
-    expect(screen.getByText('难度：中级')).toBeInTheDocument();
+    expect(screen.getByText('Difficulty: Intermediate')).toBeInTheDocument();
   });
 
   it('renders all difficulty labels', () => {
     const { rerender } = render(<GameStatus difficulty={1} />);
-    expect(screen.getByText('难度：初级')).toBeInTheDocument();
+    expect(screen.getByText('Difficulty: Beginner')).toBeInTheDocument();
     rerender(<GameStatus difficulty={3} />);
-    expect(screen.getByText('难度：高级')).toBeInTheDocument();
+    expect(screen.getByText('Difficulty: Advanced')).toBeInTheDocument();
   });
 
   it('renders all three info lines', () => {
@@ -65,12 +65,12 @@ describe('GameStatus', () => {
   // 边缘情况：未知状态
   it('renders unknown status as-is', () => {
     render(<GameStatus status="custom_status" />);
-    expect(screen.getByText('状态：custom_status')).toBeInTheDocument();
+    expect(screen.getByText('custom_status')).toBeInTheDocument();
   });
 
   // 边缘情况：未知难度
   it('renders unknown difficulty as number', () => {
     render(<GameStatus difficulty={99} />);
-    expect(screen.getByText('难度：99')).toBeInTheDocument();
+    expect(screen.getByText('Difficulty: 99')).toBeInTheDocument();
   });
 });

@@ -23,16 +23,16 @@ function ControlPanel({ difficulty, onNewGame, onUndo, canUndo, isThinking }: Co
   return (
     <div className="control-panel">
       <div className="control-panel__section">
-        <label htmlFor="difficulty-select">难度选择：</label>
+        <label htmlFor="difficulty-select">Difficulty:</label>
         <select
           id="difficulty-select"
           value={selectedDifficulty}
           onChange={handleDifficultyChange}
           disabled={isThinking}
         >
-          <option value={1}>初级</option>
-          <option value={2}>中级</option>
-          <option value={3}>高级</option>
+          <option value={1}>Beginner</option>
+          <option value={2}>Intermediate</option>
+          <option value={3}>Advanced</option>
         </select>
       </div>
       <div className="control-panel__buttons">
@@ -42,7 +42,7 @@ function ControlPanel({ difficulty, onNewGame, onUndo, canUndo, isThinking }: Co
           onClick={handleNewGame}
           disabled={isThinking}
         >
-          新游戏
+          New Game
         </button>
         <button
           className="control-panel__btn control-panel__btn--undo"
@@ -50,13 +50,13 @@ function ControlPanel({ difficulty, onNewGame, onUndo, canUndo, isThinking }: Co
           onClick={onUndo}
           disabled={!canUndo || isThinking}
         >
-          悔棋
+          Undo
         </button>
       </div>
       {isThinking && (
         <div className="control-panel__thinking">
           <span className="control-panel__spinner" />
-          AI 思考中...
+          AI thinking...
         </div>
       )}
     </div>

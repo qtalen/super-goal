@@ -230,7 +230,7 @@ describe('API error handling', () => {
       await chessApi.getGame('g1');
     } catch (e) {
       expect((e as ChessApiError).status).toBe(408);
-      expect((e as ChessApiError).message).toBe('请求超时');
+      expect((e as ChessApiError).message).toBe('Request timeout');
     }
   });
 

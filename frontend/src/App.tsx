@@ -273,7 +273,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1>国际象棋</h1>
+      <h1>Chess</h1>
       <div className="app-layout">
         <div className="app-board-section">
           <Board

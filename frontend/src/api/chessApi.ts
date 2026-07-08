@@ -71,11 +71,11 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     }
 
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new ChessApiError('请求超时', 408);
+      throw new ChessApiError('Request timeout', 408);
     }
 
     throw new ChessApiError(
-      error instanceof Error ? error.message : '未知网络错误',
+      error instanceof Error ? error.message : 'Unknown network error',
       0,
     );
   }
@@ -91,7 +91,7 @@ export const chessApi = {
 
   getGame(gameId: string): Promise<GameState> {
     if (!gameId) {
-      return Promise.reject(new ChessApiError('gameId 不能为空', 400));
+      return Promise.reject(new ChessApiError('gameId is empty', 400));
     }
     return request<GameState>(`${BASE_URL}/games/${encodeURIComponent(gameId)}`);
   },
@@ -103,7 +103,7 @@ export const chessApi = {
     promotion?: string,
   ): Promise<MoveResponse> {
     if (!gameId || !from || !to) {
-      return Promise.reject(new ChessApiError('gameId, from, to 不能为空', 400));
+      return Promise.reject(new ChessApiError('gameId, from, to cannot be empty', 400));
     }
     return request<MoveResponse>(`${BASE_URL}/games/${encodeURIComponent(gameId)}/move`, {
       method: 'POST',
@@ -113,7 +113,7 @@ export const chessApi = {
 
   getLegalMoves(gameId: string): Promise<{ legalMoves: string[] }> {
     if (!gameId) {
-      return Promise.reject(new ChessApiError('gameId 不能为空', 400));
+      return Promise.reject(new ChessApiError('gameId is empty', 400));
     }
     return request<{ legalMoves: string[] }>(
       `${BASE_URL}/games/${encodeURIComponent(gameId)}/legal-moves`,

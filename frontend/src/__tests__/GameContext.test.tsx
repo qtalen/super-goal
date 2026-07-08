@@ -136,8 +136,8 @@ describe('gameReducer', () => {
   // ─── SET_ERROR ─────────────────────────────────────────────────────
   describe('SET_ERROR', () => {
     it('sets error message', () => {
-      const state = gameReducer(initialState, { type: 'SET_ERROR', payload: '网络错误' });
-      expect(state.error).toBe('网络错误');
+      const state = gameReducer(initialState, { type: 'SET_ERROR', payload: 'network error' });
+      expect(state.error).toBe('network error');
     });
 
     // 边缘情况：设置 error 时自动清空 isThinking

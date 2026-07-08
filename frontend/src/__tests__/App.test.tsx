@@ -71,9 +71,9 @@ describe('App (本地模式 / Local mode)', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the heading 国际象棋', () => {
+  it('renders the heading Chess', () => {
     renderWithProvider(<App />);
-    expect(screen.getByText('国际象棋')).toBeInTheDocument();
+    expect(screen.getByText('Chess')).toBeInTheDocument();
   });
 
   it('renders Board component', () => {
@@ -83,12 +83,12 @@ describe('App (本地模式 / Local mode)', () => {
 
   it('renders ControlPanel with difficulty selector', () => {
     renderWithProvider(<App />);
-    expect(screen.getByLabelText('难度选择：')).toBeInTheDocument();
+    expect(screen.getByLabelText('Difficulty:')).toBeInTheDocument();
   });
 
   it('renders GameStatus heading', () => {
     renderWithProvider(<App />);
-    expect(screen.getByText('游戏状态')).toBeInTheDocument();
+    expect(screen.getByText('Game Status')).toBeInTheDocument();
   });
 
   it('renders 64 squares on the board', () => {
@@ -105,7 +105,7 @@ describe('App (本地模式 / Local mode)', () => {
 
   it('renders GameStatus with difficulty info', () => {
     renderWithProvider(<App />);
-    expect(screen.getByText(/难度：/)).toBeInTheDocument();
+    expect(screen.getByText('Difficulty: Intermediate')).toBeInTheDocument();
   });
 
   // 走子交互测试
@@ -198,14 +198,14 @@ describe('App (本地模式 / Local mode)', () => {
   it('updates turn after each move', () => {
     renderWithProvider(<App />);
 
-    const turnDisplay = screen.getByText(/回合：/);
-    expect(turnDisplay.textContent).toContain('白方走');
+    const turnDisplay = screen.getByText(/'s turn/);
+    expect(turnDisplay.textContent).toContain("White's turn");
 
     const squares = screen.getAllByRole('button');
     fireEvent.click(squares[6 * 8 + 4]); // e2
     fireEvent.click(squares[4 * 8 + 4]); // e4
 
-    expect(turnDisplay.textContent).toContain('黑方走');
+    expect(turnDisplay.textContent).toContain("Black's turn");
   });
 
   // 8. 选中后显示合法走法标记
@@ -250,7 +250,7 @@ describe('App (API 模式 / API mode)', () => {
     vi.mocked(chessApi.createGame).mockResolvedValueOnce(mockGame as any);
 
     renderWithProvider(<App />);
-    fireEvent.click(screen.getByText('新游戏'));
+    fireEvent.click(screen.getByText('New Game'));
 
     await waitFor(() => {
       expect(chessApi.createGame).toHaveBeenCalledWith(2);
@@ -264,7 +264,7 @@ describe('App (API 模式 / API mode)', () => {
     );
 
     renderWithProvider(<App />);
-    fireEvent.click(screen.getByText('新游戏'));
+    fireEvent.click(screen.getByText('New Game'));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -279,7 +279,7 @@ describe('App (API 模式 / API mode)', () => {
     );
 
     renderWithProvider(<App />);
-    fireEvent.click(screen.getByText('新游戏'));
+    fireEvent.click(screen.getByText('New Game'));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -301,7 +301,7 @@ describe('App (API 模式 / API mode)', () => {
     renderWithProvider(<App />);
 
     // 创建游戏
-    fireEvent.click(screen.getByText('新游戏'));
+    fireEvent.click(screen.getByText('New Game'));
     await waitFor(() => {
       expect(chessApi.createGame).toHaveBeenCalled();
     });
@@ -331,7 +331,7 @@ describe('App (API 模式 / API mode)', () => {
 
     renderWithProvider(<App />);
 
-    fireEvent.click(screen.getByText('新游戏'));
+    fireEvent.click(screen.getByText('New Game'));
     await waitFor(() => {
       expect(chessApi.createGame).toHaveBeenCalled();
     });

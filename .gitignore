@@ -217,6 +217,13 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Node.js / frontend
+node_modules/
+.vite/
+
+# Python / backend
+.venv/
+
 # Abandoned chess app artifacts (corrupted directory)
 /server/
 /client/

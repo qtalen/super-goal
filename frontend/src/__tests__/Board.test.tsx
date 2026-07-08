@@ -35,10 +35,10 @@ describe('Board', () => {
     render(<Board {...defaultProps} />);
     const squares = screen.getAllByRole('button');
 
-    // a8 (row 8, file a: 8+97=105, odd → dark)
-    expect(squares[0].className).toContain('square--dark');
-    // b8 (row 8, file b: 8+98=106, even → light)
-    expect(squares[1].className).toContain('square--light');
+    // a8 (ri=0, fi=0 → 0+0=0, even → light)
+    expect(squares[0].className).toContain('square--light');
+    // b8 (ri=0, fi=1 → 0+1=1, odd → dark)
+    expect(squares[1].className).toContain('square--dark');
   });
 
   it('renders consistent number of light squares (32)', () => {

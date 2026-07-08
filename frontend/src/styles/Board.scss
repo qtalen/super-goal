@@ -1,8 +1,10 @@
+$square-size: 64px;
+$label-size: 28px;
+
 .board {
   display: grid;
-  grid-template-columns: 32px repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr) 32px;
-  max-width: 560px;
+  grid-template-columns: $label-size repeat(8, $square-size);
+  grid-template-rows: repeat(8, $square-size) $label-size;
   border: 2px solid #333;
   border-radius: 4px;
   overflow: hidden;
@@ -10,15 +12,14 @@
 }
 
 .square {
-  aspect-ratio: 1;
+  width: $square-size;
+  height: $square-size;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
   font-size: 2rem;
-  min-width: 60px;
-  min-height: 60px;
 
   &--light {
     background-color: var(--color-board-light);
@@ -104,12 +105,11 @@
   font-size: 2.4rem;
 
   &--white {
-    color: #fff;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    color: #222;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
   }
 
   &--black {
-    color: #222;
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+    color: #000;
   }
 }

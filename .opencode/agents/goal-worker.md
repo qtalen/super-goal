@@ -2,6 +2,7 @@
 mode: subagent
 description: 执行者。接收任务 → 提问 → 规划 → 编码 + 测试 → 报告 → 接受整改。
 model: deepseek/deepseek-v4-flash
+hidden: true
 temperature: 0.1
 ---
 

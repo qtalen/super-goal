@@ -1,63 +1,63 @@
-# Fibonacci Script — 开发报告
+# Fibonacci Script — Development Report
 
-## 1. 原始需求
+## 1. Original Requirement
 
-创建一个计算斐波那契数列的脚本。
+Create a Fibonacci sequence calculation script.
 
-## 2. 确认后的需求清单
+## 2. Confirmed Requirements Checklist
 
-| # | 需求描述 | 依赖 | 状态 |
-|---|----------|------|------|
-| 1 | 创建 Python 脚本，通过命令行参数接收 N，计算并输出斐波那契数列第 N 项（含输入验证和边缘情况处理） | 无 | ✅ passed |
+| # | Requirement Description | Dependencies | Status |
+|---|------------------------|--------------|--------|
+| 1 | Create a Python script that receives N via command-line argument, calculates and outputs the Nth Fibonacci number (including input validation and edge case handling) | None | ✅ passed |
 
-技术栈：Python ≥3.12, uv 包管理, argparse CLI, pytest 测试框架。
+Technology stack: Python ≥3.12, uv package management, argparse CLI, pytest testing framework.
 
-## 3. 全局架构摘要
+## 3. Global Architecture Summary
 
-- **算法**：迭代法，O(n) 时间，O(1) 空间
-- **布局**：`src/fibonacci/` 包结构（calculator.py 纯函数 + cli.py 编排）
-- **CLI**：`python -m fibonacci N` 或 `fibonacci N`
-- **错误策略**：成功退出码 0，负数退出码 1，argparse 错误退出码 2
+- **Algorithm**: Iterative method, O(n) time, O(1) space
+- **Layout**: `src/fibonacci/` package structure (calculator.py pure functions + cli.py orchestration)
+- **CLI**: `python -m fibonacci N` or `fibonacci N`
+- **Error strategy**: Exit code 0 for success, exit code 1 for negative input, exit code 2 for argparse errors
 
-## 4. 审查历史
+## 4. Review History
 
-### 需求 #1（共 1 轮审查）
+### Requirement #1 (1 review round)
 
-- **审查 1**：代码质量检查 + 测试运行 + 端到端验证 — 全部通过
-- **测试结果**：15/15 通过（1.00s）
-- **边缘覆盖**：N=0,1 边界、大数 N=1000、负数、非数字、浮点数、空输入、多余参数 — 全部覆盖
-- **CLI 验证**：正常路径、负数错误、类型错误 — 全部符合预期
+- **Review 1**: Code quality check + test run + end-to-end verification — all passed
+- **Test results**: 15/15 passed (1.00s)
+- **Edge coverage**: N=0,1 boundaries, large N=1000, negative numbers, non-numeric input, floats, empty input, extra arguments — all covered
+- **CLI verification**: Normal path, negative error, type error — all met expectations
 
-## 5. "需人工介入"的需求
+## 5. "Manual Intervention Required" Items
 
-无。所有需求均已通过。
+None. All requirements have passed.
 
-## 6. 文件改动列表
+## 6. File Change List
 
-| 文件 | 状态 | 说明 |
-|------|------|------|
-| `pyproject.toml` | 新建 | 项目元数据、依赖配置 |
-| `src/fibonacci/__init__.py` | 新建 | 包初始化，导出 fibonacci |
-| `src/fibonacci/calculator.py` | 新建 | 核心计算逻辑（迭代法） |
-| `src/fibonacci/cli.py` | 新建 | CLI 参数解析与编排 |
-| `src/fibonacci/__main__.py` | 新建 | `python -m fibonacci` 入口 |
-| `tests/test_fibonacci.py` | 新建 | 15 个测试用例 |
-| `docs/fibonacci-script/reqs-manifest.md` | 新建 | 需求清单 |
-| `docs/fibonacci-script/architecture.md` | 新建 | 架构设计文档 |
-| `docs/fibonacci-script/report.md` | 新建 | 本报告 |
+| File | Status | Description |
+|------|--------|-------------|
+| `pyproject.toml` | New | Project metadata, dependency configuration |
+| `src/fibonacci/__init__.py` | New | Package initialization, exports fibonacci |
+| `src/fibonacci/calculator.py` | New | Core calculation logic (iterative method) |
+| `src/fibonacci/cli.py` | New | CLI argument parsing and orchestration |
+| `src/fibonacci/__main__.py` | New | `python -m fibonacci` entry point |
+| `tests/test_fibonacci.py` | New | 15 test cases |
+| `docs/fibonacci-script/reqs-manifest.md` | New | Requirements manifest |
+| `docs/fibonacci-script/architecture.md` | New | Architecture design document |
+| `docs/fibonacci-script/report.md` | New | This report |
 
-## 7. 验证结果详情
+## 7. Validation Results Detail
 
-### 单元测试
+### Unit Tests
 
 ```
 ============================= 15 passed in 0.89s ==============================
 ```
 
-### 端到端 CLI 测试
+### End-to-End CLI Tests
 
-| 命令 | 输出 | 退出码 | 结果 |
-|------|------|--------|------|
+| Command | Output | Exit Code | Result |
+|---------|--------|-----------|--------|
 | `fibonacci 10` | `55` | 0 | ✅ |
 | `fibonacci 0` | `0` | 0 | ✅ |
 | `fibonacci -1` | `fibonacci: error: N must be a non-negative integer, got -1` | 1 | ✅ |
@@ -65,4 +65,4 @@
 
 ---
 
-**结论**：所有需求已完成并验证通过。项目可通过 `uv run python -m fibonacci N` 直接使用。
+**Conclusion**: All requirements have been completed and verified. The project can be used directly via `uv run python -m fibonacci N`.

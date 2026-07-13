@@ -1,12 +1,12 @@
-## 需求清单
+## Requirements Manifest
 
-原始需求：创建一个计算斐波那契数列的脚本
+Original requirement: Create a Fibonacci sequence calculation script
 
-技术栈选择：
-- 语言：Python
-- 功能：计算第 N 项
-- 交互方式：命令行参数
+Technology stack choices:
+- Language: Python
+- Feature: Compute the Nth term
+- Interaction method: Command-line argument
 
-| # | 需求描述 | 依赖 | 状态 |
-|---|----------|------|------|
-| 1 | 创建 Python 脚本，通过命令行参数接收 N，计算并输出斐波那契数列第 N 项（含输入验证和边缘情况处理） | 无 | passed |
+| # | Requirement Description | Dependencies | Status |
+|---|------------------------|--------------|--------|
+| 1 | Create a Python script that receives N via command-line argument, calculates and outputs the Nth Fibonacci number (including input validation and edge case handling) | None | passed |

@@ -59,17 +59,17 @@ describe('Board', () => {
     expect(darkCount).toBe(32);
   });
 
-  // 渲染有棋子的 Board
+  // Render Board with pieces
   it('renders pieces from FEN string', () => {
     render(<Board {...defaultProps} />);
-    // 初始局面：白方有 16 颗棋子，黑方有 16 颗棋子
+    // Initial position: White has 16 pieces, Black has 16 pieces
     const whitePieces = screen.getAllByLabelText(/white/);
     const blackPieces = screen.getAllByLabelText(/black/);
     expect(whitePieces).toHaveLength(16);
     expect(blackPieces).toHaveLength(16);
   });
 
-  // 渲染空棋盘
+  // Render empty board
   it('renders empty board with no pieces', () => {
     render(<Board {...defaultProps} fen={EMPTY_FEN} />);
     const whitePieces = screen.queryAllByLabelText(/white/);
@@ -78,7 +78,7 @@ describe('Board', () => {
     expect(blackPieces).toHaveLength(0);
   });
 
-  // 渲染行列坐标标注
+  // Render row and column labels
   it('renders row labels (1-8)', () => {
     render(<Board {...defaultProps} />);
     for (let i = 1; i <= 8; i++) {
@@ -97,13 +97,13 @@ describe('Board', () => {
     const onSquareClick = vi.fn();
     render(<Board {...defaultProps} onSquareClick={onSquareClick} />);
     const squares = screen.getAllByRole('button');
-    // 点击 a1（最后一个格子的行，第一个文件）
+    // Click a1 (last row, first file)
     const a1Index = 7 * 8 + 0; // row index 7 (rank 1), file index 0 (a)
     squares[a1Index].click();
     expect(onSquareClick).toHaveBeenCalledWith('a1');
   });
 
-  // 选中格子高亮
+  // Highlight selected square
   it('highlights selected square', () => {
     render(<Board {...defaultProps} selectedSquare="e4" />);
     const squares = screen.getAllByRole('button');
@@ -111,7 +111,7 @@ describe('Board', () => {
     expect(squares[e4Index].className).toContain('square--selected');
   });
 
-  // 合法走法标记
+  // Mark legal moves
   it('marks legal move squares', () => {
     render(
       <Board
@@ -126,7 +126,7 @@ describe('Board', () => {
     expect(squares[35].className).toContain('square--legal-move');
   });
 
-  // UCI 上一步走法高亮（from 和 to 都应高亮）
+  // UCI last move highlight (both from and to should be highlighted)
   it('highlights both from and to squares for UCI lastMove', () => {
     render(<Board {...defaultProps} lastMove="e2e4" fen={EMPTY_FEN} />);
     const squares = screen.getAllByRole('button');
@@ -138,7 +138,7 @@ describe('Board', () => {
     expect(squares[e4Index].className).toContain('square--last-move');
   });
 
-  // 将军高亮
+  // Check highlight
   it('highlights check square', () => {
     render(<Board {...defaultProps} checkSquare="e1" fen={EMPTY_FEN} />);
     const squares = screen.getAllByRole('button');
@@ -147,7 +147,7 @@ describe('Board', () => {
     expect(squares[e1Index].className).toContain('square--check');
   });
 
-  // 边界情况：selectedSquare 为 null 时没有高亮
+  // Edge case: no highlight when selectedSquare is null
   it('does not highlight any square when selectedSquare is null', () => {
     render(<Board {...defaultProps} selectedSquare={null} fen={EMPTY_FEN} />);
     const squares = screen.getAllByRole('button');
@@ -157,7 +157,7 @@ describe('Board', () => {
     expect(selected).toHaveLength(0);
   });
 
-  // 边界情况：legalMoves 为空数组
+  // Edge case: legalMoves is empty array
   it('does not mark legal moves when array is empty', () => {
     render(<Board {...defaultProps} legalMoves={[]} fen={EMPTY_FEN} />);
     const squares = screen.getAllByRole('button');
@@ -167,7 +167,7 @@ describe('Board', () => {
     expect(legalMoves).toHaveLength(0);
   });
 
-  // 边界情况：lastMove 为 null 时没有高亮
+  // Edge case: no highlight when lastMove is null
   it('does not highlight last move when lastMove is null', () => {
     render(<Board {...defaultProps} lastMove={null} fen={EMPTY_FEN} />);
     const squares = screen.getAllByRole('button');
@@ -177,7 +177,7 @@ describe('Board', () => {
     expect(lastMoves).toHaveLength(0);
   });
 
-  // 边界情况：checkSquare 为 null 时没有将军高亮
+  // Edge case: no check highlight when checkSquare is null
   it('does not highlight check when checkSquare is null', () => {
     render(<Board {...defaultProps} checkSquare={null} fen={EMPTY_FEN} />);
     const squares = screen.getAllByRole('button');
@@ -197,52 +197,52 @@ describe('parseUci', () => {
     expect(parseUci('e7e8q')).toEqual({ from: 'e7', to: 'e8' });
   });
 
-  // 边缘情况：null 输入
+  // Edge case: null input
   it('returns null for null input', () => {
     expect(parseUci(null)).toBeNull();
   });
 
-  // 边缘情况：空字符串
+  // Edge case: empty string
   it('returns null for empty string', () => {
     expect(parseUci('')).toBeNull();
   });
 
-  // 边缘情况：太短的字符串
+  // Edge case: string too short
   it('returns null for short string', () => {
     expect(parseUci('e2')).toBeNull();
   });
 });
 
 describe('parseFen', () => {
-  // 正常情况：初始局面
+  // Normal case: initial position
   it('parses initial position correctly', () => {
     const result = parseFen(INITIAL_FEN);
     expect(result).toHaveLength(8);
     result.forEach((row) => expect(row).toHaveLength(8));
 
-    // 第一行（第8排）：黑方棋子
+    // Row 0 (rank 8): Black pieces
     expect(result[0]).toEqual([
       'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r',
     ]);
-    // 第二行（第7排）：黑方兵
+    // Row 1 (rank 7): Black pawns
     expect(result[1]).toEqual([
       'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p',
     ]);
-    // 中间四行：空
+    // Rows 2-5: empty
     for (let i = 2; i <= 5; i++) {
       expect(result[i]).toEqual([null, null, null, null, null, null, null, null]);
     }
-    // 第七行（第2排）：白方兵
+    // Row 6 (rank 2): White pawns
     expect(result[6]).toEqual([
       'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
     ]);
-    // 第八行（第1排）：白方棋子
+    // Row 7 (rank 1): White pieces
     expect(result[7]).toEqual([
       'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R',
     ]);
   });
 
-  // 正常情况：空棋盘
+  // Normal case: empty board
   it('parses empty board correctly', () => {
     const result = parseFen(EMPTY_FEN);
     expect(result).toHaveLength(8);
@@ -252,7 +252,7 @@ describe('parseFen', () => {
     });
   });
 
-  // 边缘情况：仅有一行
+  // Edge case: single rank
   it('parses a single rank', () => {
     const result = parseFen('8/8/8/8/8/8/8/8 w - - 0 1');
     expect(result).toHaveLength(8);
@@ -262,21 +262,21 @@ describe('parseFen', () => {
     });
   });
 
-  // 边界情况：所有棋子在一行
+  // Edge case: all pieces in one rank
   it('parses rank with all pieces', () => {
     const result = parseFen('KQkq w - - 0 1');
-    // KQkq 是 4 个字符，扩展为 4 列
+    // KQkq is 4 characters, expands to 4 columns
     expect(result[0]).toEqual(['K', 'Q', 'k', 'q']);
   });
 
-  // 边界情况：混合数字和字母
+  // Edge case: mixed digits and letters
   it('parses mixed digits and letters', () => {
     const result = parseFen('4k3/8/8/8/8/8/8/4K3 w - - 0 1');
     expect(result[0]).toEqual([null, null, null, null, 'k', null, null, null]);
     expect(result[7]).toEqual([null, null, null, null, 'K', null, null, null]);
   });
 
-  // 异常情况：FEN 没有空格分割
+  // Edge case: FEN without space delimiters
   it('handles FEN without any spaces', () => {
     const result = parseFen('8/8/8/8/8/8/8/8');
     expect(result).toHaveLength(8);
@@ -285,7 +285,7 @@ describe('parseFen', () => {
     });
   });
 
-  // 异常情况：空字符串
+  // Edge case: empty string
   it('returns empty structure for empty string', () => {
     const result = parseFen('');
     expect(result).toEqual([[]]);

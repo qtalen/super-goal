@@ -11,7 +11,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// ─── 辅助函数 ──────────────────────────────────────────────────────────
+// ─── Helper functions ──────────────────────────────────────────────────
 function mockResponse(data: unknown, status = 200) {
   return Promise.resolve({
     ok: status >= 200 && status < 300,
@@ -24,7 +24,7 @@ function mockResponse(data: unknown, status = 200) {
 // ─── createGame ─────────────────────────────────────────────────────
 describe('chessApi.createGame', () => {
   it('sends POST /api/games with valid difficulty', async () => {
-    // 模拟后端返回 snake_case，toCamelCase 应转换为 camelCase
+    // Simulate backend returning snake_case, toCamelCase should convert to camelCase
     const responseData: Record<string, unknown> = {
       game_id: 'abc', fen: 'starting-fen', turn: 'w', status: 'playing',
       difficulty: 2, legal_moves: [], last_move: null,
@@ -36,20 +36,20 @@ describe('chessApi.createGame', () => {
     expect(result.legalMoves).toEqual([]);
     expect(result.lastMove).toBeNull();
 
-    // 验证请求
+    // Verify request
     const callArgs = mockFetch.mock.calls[0];
     expect(callArgs[0]).toBe('/api/games');
     expect(callArgs[1]?.method).toBe('POST');
     expect(JSON.parse(callArgs[1]?.body as string)).toEqual({ difficulty: 2 });
   });
 
-  // 边缘情况：难度 1（边界值）
+  // Edge case: difficulty 1 (boundary value)
   it('works with minimum difficulty (1)', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ game_id: 'a' }));
     await expect(chessApi.createGame(1)).resolves.toBeDefined();
   });
 
-  // 边缘情况：难度 3（边界值）
+  // Edge case: difficulty 3 (boundary value)
   it('works with maximum difficulty (3)', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ game_id: 'a' }));
     await expect(chessApi.createGame(3)).resolves.toBeDefined();
@@ -65,7 +65,7 @@ describe('chessApi.getGame', () => {
     expect(mockFetch.mock.calls[0][0]).toBe('/api/games/test');
   });
 
-  // 边缘情况：空 gameId
+  // Edge case: empty gameId
   it('rejects with error for empty gameId', async () => {
     await expect(chessApi.getGame('')).rejects.toThrow(ChessApiError);
   });
@@ -79,7 +79,7 @@ describe('chessApi.getGame', () => {
     }
   });
 
-  // 边缘情况：特殊字符 gameId（应被 encodeURIComponent 转义）
+  // Edge case: special character gameId (should be encoded by encodeURIComponent)
   it('encodes special characters in gameId', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ game_id: 'a/b' }));
     await chessApi.getGame('a/b');
@@ -106,17 +106,17 @@ describe('chessApi.makeMove', () => {
     expect(body.promotion).toBe('q');
   });
 
-  // 边缘情况：空 gameId
+  // Edge case: empty gameId
   it('rejects for empty gameId', async () => {
     await expect(chessApi.makeMove('', 'e2', 'e4')).rejects.toThrow(ChessApiError);
   });
 
-  // 边缘情况：空 from
+  // Edge case: empty from
   it('rejects for empty from', async () => {
     await expect(chessApi.makeMove('g1', '', 'e4')).rejects.toThrow(ChessApiError);
   });
 
-  // 边缘情况：空 to
+  // Edge case: empty to
   it('rejects for empty to', async () => {
     await expect(chessApi.makeMove('g1', 'e2', '')).rejects.toThrow(ChessApiError);
   });
@@ -131,15 +131,15 @@ describe('chessApi.getLegalMoves', () => {
     expect(mockFetch.mock.calls[0][0]).toBe('/api/games/g1/legal-moves');
   });
 
-  // 边缘情况：空 gameId
+  // Edge case: empty gameId
   it('rejects for empty gameId', async () => {
     await expect(chessApi.getLegalMoves('')).rejects.toThrow(ChessApiError);
   });
 });
 
-// ─── 错误处理 ─────────────────────────────────────────────────────────
+// ─── Error handling ─────────────────────────────────────────────────
 describe('API error handling', () => {
-  // 失败路径：HTTP 404
+  // Failure path: HTTP 404
   it('throws ChessApiError with 404 detail', async () => {
     mockFetch.mockResolvedValueOnce(
       Promise.resolve({
@@ -158,7 +158,7 @@ describe('API error handling', () => {
     }
   });
 
-  // 失败路径：HTTP 400
+  // Failure path: HTTP 400
   it('throws ChessApiError with 400 illegal move', async () => {
     mockFetch.mockResolvedValueOnce(
       Promise.resolve({
@@ -176,7 +176,7 @@ describe('API error handling', () => {
     }
   });
 
-  // 边缘情况：HTTP 500
+  // Edge case: HTTP 500
   it('throws ChessApiError for server error', async () => {
     mockFetch.mockResolvedValueOnce(
       Promise.resolve({
@@ -193,7 +193,7 @@ describe('API error handling', () => {
     }
   });
 
-  // 边缘情况：响应体不是 JSON
+  // Edge case: response body is not JSON
   it('handles non-JSON error response', async () => {
     mockFetch.mockResolvedValueOnce(
       Promise.resolve({
@@ -211,7 +211,7 @@ describe('API error handling', () => {
     }
   });
 
-  // 边缘情况：网络错误（fetch 抛出异常）
+  // Edge case: network error (fetch throws exception)
   it('handles network failure', async () => {
     mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
     try {
@@ -222,7 +222,7 @@ describe('API error handling', () => {
     }
   });
 
-  // 边缘情况：请求超时
+  // Edge case: request timeout
   it('handles abort/timeout', async () => {
     const abortError = new DOMException('The operation was aborted', 'AbortError');
     mockFetch.mockRejectedValueOnce(abortError);
@@ -234,7 +234,7 @@ describe('API error handling', () => {
     }
   });
 
-  // 边缘情况：AbortController 信号
+  // Edge case: AbortController signal
   it('passes signal to fetch for timeout control', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ gameId: 'g1' }));
     await chessApi.getGame('g1');
@@ -244,7 +244,7 @@ describe('API error handling', () => {
   });
 });
 
-// ─── 请求头 ───────────────────────────────────────────────────────────
+// ─── Request headers ───────────────────────────────────────────────
 describe('request headers', () => {
   it('sets Content-Type to application/json', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ gameId: 'g1' }));
@@ -256,7 +256,7 @@ describe('request headers', () => {
 
   it('includes custom headers', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({}));
-    // 通过 makeMove 内部不会加自定义 header，但 request 函数合并 headers
+    // makeMove internally doesn't add custom headers, but request function merges headers
     await chessApi.createGame(2);
 
     const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;

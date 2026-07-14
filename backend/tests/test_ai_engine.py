@@ -1,5 +1,5 @@
 """
-AI 引擎测试 — evaluate / select_move / minimax / 边缘情况
+AI Engine Tests — evaluate / select_move / minimax / edge cases
 """
 import pytest
 import chess
@@ -12,166 +12,166 @@ from app.ai_engine import (
     _get_position_value,
 )
 
-# 已验证的将杀 FEN
+# Verified checkmate FENs
 SCHOLAR_MATE = "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4"
 FOOL_MATE = "rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3"
-# 一步将杀前（白方后 h5 吃 f7 即杀）
+# One move before mate (white queen h5 captures f7#)
 MATE_IN_ONE = "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4"
 
 
 class TestEvaluate:
-    """局面评估函数测试"""
+    """Board evaluation function tests"""
 
     def test_initial_board_approx_zero(self):
-        """基础功能：初始局面评估值应接近 0（±50 以内）"""
+        """Basic function: initial board evaluation should be close to 0 (within ±50)"""
         board = chess.Board()
         score = evaluate(board)
-        assert -50 < score < 50, f"初始局面评估应接近0，实际={score}"
+        assert -50 < score < 50, f"Initial board eval should be near 0, got={score}"
 
     def test_white_up_material(self):
-        """边缘情况：白方多一马，评估应为正"""
-        # 黑方少一个马（b8 格为空），白方多 320 子力
+        """Edge case: white up a knight, evaluation should be positive"""
+        # Black missing a knight (b8 square empty), white up 320 material
         board = chess.Board("rnbqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         score = evaluate(board)
-        assert score > 0, f"白方多子应正值，实际={score}"
+        assert score > 0, f"White up material should be positive, got={score}"
 
     def test_black_up_material(self):
-        """边缘情况：黑方多一马，评估应为负"""
-        # 白方少一个马（g1 上的马被黑马吃掉了）
+        """Edge case: black up a knight, evaluation should be negative"""
+        # White missing a knight (knight on g1 captured by black knight)
         board = chess.Board("rnbqkb1r/pppppppp/8/8/4P3/5n2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
         score = evaluate(board)
-        assert score < 0, f"黑方多子应负值，实际={score}"
+        assert score < 0, f"Black up material should be negative, got={score}"
 
     def test_checkmate_white_wins(self):
-        """边缘情况：白方将杀黑方（Scholar's Mate），评估应为极大正值"""
+        """Edge case: white checkmates black (Scholar's Mate), evaluation should be large positive"""
         board = chess.Board(SCHOLAR_MATE)
-        assert board.turn == chess.BLACK  # 轮到黑方走，但已被将杀
+        assert board.turn == chess.BLACK  # Black to move, but already checkmated
         score = evaluate(board)
-        assert score > 1e5, f"白方将杀应极大正值，实际={score}"
+        assert score > 1e5, f"White checkmate should be large positive, got={score}"
 
     def test_checkmate_black_wins(self):
-        """边缘情况：黑方将杀白方（Fool's Mate），评估应为极大负值"""
+        """Edge case: black checkmates white (Fool's Mate), evaluation should be large negative"""
         board = chess.Board(FOOL_MATE)
-        assert board.turn == chess.WHITE  # 轮到白方走，但已被将杀
+        assert board.turn == chess.WHITE  # White to move, but already checkmated
         score = evaluate(board)
-        assert score < -1e5, f"黑方将杀应极大负值，实际={score}"
+        assert score < -1e5, f"Black checkmate should be large negative, got={score}"
 
     def test_stalemate_evaluates_zero(self):
-        """边缘情况：逼和局面评估为零"""
-        # 构造一个逼和局面：黑方王被自己的兵和对方王包围，白方无子可动
+        """Edge case: stalemate position evaluates to zero"""
+        # Set up a stalemate position: black king surrounded by own pawns and opponent king, white has no moves
         board = chess.Board("8/8/8/8/8/1k6/8/1K6 w - - 0 1")
         if board.is_stalemate():
             score = evaluate(board)
             assert score == 0
         else:
-            pytest.skip("无法构造逼和局面")
+            pytest.skip("Could not construct stalemate position")
 
     def test_insufficient_material(self):
-        """边缘情况：子力不足（王 vs 王）评估为零"""
+        """Edge case: insufficient material (king vs king) evaluates to zero"""
         board = chess.Board("8/8/8/8/8/8/8/k6K w - - 0 1")
         score = evaluate(board)
         assert score == 0
 
     def test_empty_board(self):
-        """边缘情况：空棋盘评估为零"""
-        board = chess.Board(None)  # 空棋盘
+        """Edge case: empty board evaluates to zero"""
+        board = chess.Board(None)  # Empty board
         score = evaluate(board)
-        assert score == 0, f"空棋盘应为零，实际={score}"
+        assert score == 0, f"Empty board should be zero, got={score}"
 
     def test_get_position_value_black_flip(self):
-        """边缘情况：黑方兵的 position value 应使用翻转后的行"""
+        """Edge case: black pawn position value should use flipped row"""
         piece = chess.Piece(chess.PAWN, chess.BLACK)
-        # 黑方兵在 a7 (square=8, row=1, col=0)
-        # 白方视角下兵在 row=1 -> 翻转后 row=6
+        # Black pawn on a7 (square=8, row=1, col=0)
+        # From white's perspective, pawn at row=1 -> flipped row=6
         # PAWN_TABLE[6][0] = 5
         val = _get_position_value(piece, 8)  # a7 = 8
-        assert val == 5, f"黑方a7兵位置价值应为5，实际={val}"
+        assert val == 5, f"Black pawn a7 position value should be 5, got={val}"
 
     def test_get_position_value_unknown_piece(self):
-        """边缘情况：未知棋子类型返回0"""
-        piece2 = chess.Piece(0, chess.WHITE)  # 无效类型
+        """Edge case: unknown piece type returns 0"""
+        piece2 = chess.Piece(0, chess.WHITE)  # Invalid type
         val = _get_position_value(piece2, 0)
         assert val == 0
 
 
 class TestOrderMoves:
-    """走法排序测试"""
+    """Move ordering tests"""
 
     def test_capture_moves_prioritized(self):
-        """基础功能：吃子走法应排在不吃子走法前面"""
+        """Basic function: capturing moves should be sorted before non-capturing moves"""
         board = chess.Board()
         moves = order_moves(board)
         if len(moves) > 1:
             first_move = moves[0]
-            # 初始局面可能会有吃子走法（比如 exd5 等），如果没有也没关系
-            # 至少排序不应抛出异常
+            # Initial position may or may not have captures (e.g. if captures don't exist it's fine)
+            # At minimum, sorting should not raise exceptions
 
     def test_mvv_lva_ordering_simple(self):
-        """边缘情况：吃子走法全部在非吃子走法之前"""
-        # 白方车吃后（高价值受害者优先）
+        """Edge case: all capture moves come before non-capture moves"""
+        # White rook captures queen (high-value victim first)
         board = chess.Board("8/8/8/8/8/5q2/8/4R1K1 w - - 0 1")
         moves = order_moves(board)
         capture_moves = [m for m in moves if board.is_capture(m)]
         if capture_moves:
-            # 所有吃子走法都在非吃子之前
+            # All capture moves should be before non-captures
             first_non_capture = next(
                 (i for i, m in enumerate(moves) if not board.is_capture(m)),
                 len(moves),
             )
             for cm in capture_moves:
                 assert moves.index(cm) < first_non_capture, (
-                    f"吃子走法 {cm} 应在非吃子之前"
+                    f"Capture move {cm} should be before non-captures"
                 )
 
 
 class TestMinimax:
-    """Minimax 搜索测试"""
+    """Minimax search tests"""
 
     def test_minimax_depth_zero_returns_evaluate(self):
-        """基础功能：depth=0 时应直接返回评估值"""
+        """Basic function: depth=0 should directly return evaluation value"""
         board = chess.Board()
         score = minimax(board, 0, -1e9, 1e9, True)
         expected = evaluate(board)
-        assert score == expected, f"depth=0应返回{evaluate(board)}，实际={score}"
+        assert score == expected, f"depth=0 should return {evaluate(board)}, got={score}"
 
     def test_minimax_finds_checkmate(self):
-        """边缘情况：一步将杀时 minimax 应识别"""
-        # 白方后 h5 到 f7 一步将杀（Scholar's Mate）
+        """Edge case: minimax should identify mate in one"""
+        # White queen h5 to f7 is mate in one (Scholar's Mate)
         board = chess.Board(MATE_IN_ONE)
         score = minimax(board, 2, -1e9, 1e9, True)
-        # 白方应找到将杀，分值极大
-        assert score > 1e5, f"一步将杀不应被错过，实际={score}"
+        # White should find checkmate, score very large
+        assert score > 1e5, f"Mate in one should not be missed, got={score}"
 
 
 class TestSelectMove:
-    """AI 走法选择测试"""
+    """AI move selection tests"""
 
     def _assert_legal_move(self, move: chess.Move | None, board: chess.Board) -> chess.Move:
-        """辅助：断言走法合法并返回走法"""
-        assert move is not None, "走法不应为 None"
+        """Helper: assert move is legal and return it"""
+        assert move is not None, "Move should not be None"
         legal_moves = list(board.legal_moves)
-        assert move in legal_moves, f"非法走法 {move}"
+        assert move in legal_moves, f"Illegal move {move}"
         return move
 
     def test_returns_move_initial_board(self):
-        """基础功能：初始局面返回合法走法"""
+        """Basic function: initial board returns a legal move"""
         board = chess.Board()
         self._assert_legal_move(select_move(board, difficulty=2), board)
 
     def test_returns_move_difficulty_1(self):
-        """基础功能：初级难度返回合法走法"""
+        """Basic function: beginner difficulty returns a legal move"""
         board = chess.Board()
         self._assert_legal_move(select_move(board, difficulty=1), board)
 
     def test_returns_move_difficulty_2(self):
-        """基础功能：中级难度返回合法走法"""
+        """Basic function: intermediate difficulty returns a legal move"""
         board = chess.Board()
         board.push_san("e4")
         board.push_san("e5")
         self._assert_legal_move(select_move(board, difficulty=2), board)
 
     def test_returns_move_difficulty_3(self):
-        """基础功能：高级难度返回合法走法"""
+        """Basic function: advanced difficulty returns a legal move"""
         board = chess.Board()
         board.push_san("e4")
         board.push_san("d5")
@@ -180,63 +180,63 @@ class TestSelectMove:
         self._assert_legal_move(select_move(board, difficulty=3), board)
 
     def test_selects_checkmate_move(self):
-        """边缘情况：存在一步将杀时选择将杀走法"""
-        # Scholar's Mate 将杀前一步：白方后 h5 可吃 f7 将杀
+        """Edge case: when mate in one exists, selects the checkmating move"""
+        # One move before Scholar's Mate: white queen h5 can capture f7#
         board = chess.Board(MATE_IN_ONE)
         move = self._assert_legal_move(select_move(board, difficulty=3), board)
-        # 验证走法导致将杀
+        # Verify move results in checkmate
         board.push(move)
-        assert board.is_checkmate(), f"应走将杀走法，但 {move} 未将杀"
+        assert board.is_checkmate(), f"Should play checkmate move, but {move} did not checkmate"
 
     def test_no_illegal_moves(self):
-        """基础功能：AI 绝对不走非法走法"""
+        """Basic function: AI never plays illegal moves"""
         board = chess.Board("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4")
         for diff in [1, 2, 3]:
             self._assert_legal_move(select_move(board, difficulty=diff), board)
 
     def test_game_over_returns_none(self):
-        """边缘情况：将杀局面时 select_move 返回 None"""
-        board = chess.Board(SCHOLAR_MATE)  # Scholar's Mate，黑方被将杀
+        """Edge case: select_move returns None when game is over (checkmate)"""
+        board = chess.Board(SCHOLAR_MATE)  # Scholar's Mate, black is checkmated
         assert board.is_game_over()
         move = select_move(board, difficulty=2)
         assert move is None
 
     def test_no_legal_moves_returns_none(self):
-        """边缘情况：无合法走法时返回 None"""
-        board = chess.Board(SCHOLAR_MATE)  # 已被将杀，无合法走法
+        """Edge case: returns None when no legal moves"""
+        board = chess.Board(SCHOLAR_MATE)  # Already checkmated, no legal moves
         move = select_move(board, difficulty=1)
         assert move is None
 
     def test_endgame_king_only(self):
-        """边缘情况：仅剩王时游戏结束（子力不足），select_move 返回 None"""
+        """Edge case: only kings remain, game over (insufficient material), select_move returns None"""
         board = chess.Board("8/8/8/8/8/8/k7/K7 w - - 0 1")
-        assert board.is_game_over()  # 子力不足
+        assert board.is_game_over()  # Insufficient material
         move = select_move(board, difficulty=2)
-        assert move is None, "王vs王游戏已结束，应返回None"
+        assert move is None, "King vs king game is over, should return None"
 
     def test_promotion_scenario(self):
-        """边缘情况：兵升变场景"""
-        # 白方兵在 e7，可以升变
+        """Edge case: pawn promotion scenario"""
+        # White pawn on e7, can promote
         board = chess.Board("8/4P3/8/8/8/8/8/k6K w - - 0 1")
         move = self._assert_legal_move(select_move(board, difficulty=2), board)
-        # 验证 e7 的兵必须走（唯一走法）
+        # Verify the pawn on e7 must move (only legal move)
         assert move.from_square == chess.E7, (
-            "e7 兵应走升变，但选择其他走法"
+            "e7 pawn should promote, but chose a different move"
         )
 
     def test_difficulty_1_randomness(self):
-        """边缘情况：初级难度应偶尔产生不同走法（非严格）"""
+        """Edge case: beginner difficulty should occasionally produce different moves (non-strict)"""
         board = chess.Board()
         moves_set: set[str] = set()
         for _ in range(5):
             m = select_move(board, difficulty=1)
             if m:
                 moves_set.add(m.uci())
-        # 初级难度应至少产生过一种走法
-        assert len(moves_set) >= 1, "初级难度每次都应返回走法"
+        # Beginner difficulty should produce at least one kind of move
+        assert len(moves_set) >= 1, "Beginner difficulty should return a move each time"
 
     def test_invalid_difficulty_does_not_crash(self):
-        """边缘情况：无效难度值不应崩溃"""
+        """Edge case: invalid difficulty values should not crash"""
         board = chess.Board()
         for diff in [0, -1, 100]:
             move = select_move(board, difficulty=diff)
@@ -246,35 +246,35 @@ class TestSelectMove:
 
 
 class TestEdgeCases:
-    """额外的边缘情况测试"""
+    """Additional edge case tests"""
 
     def test_evaluate_checkmate_turn_independent(self):
-        """边缘情况：将杀评估取决于轮到谁走"""
-        # Scholar's Mate：白方将杀黑方，轮到黑方走
+        """Edge case: checkmate evaluation depends on whose turn it is"""
+        # Scholar's Mate: white checkmates black, black to move
         board_w = chess.Board(SCHOLAR_MATE)
         score_w = evaluate(board_w)
-        assert score_w > 1e5, f"白方将杀应正，实际={score_w}"
+        assert score_w > 1e5, f"White checkmate should be positive, got={score_w}"
 
-        # Fool's Mate：黑方将杀白方，轮到白方走
+        # Fool's Mate: black checkmates white, white to move
         board_b = chess.Board(FOOL_MATE)
         score_b = evaluate(board_b)
-        assert score_b < -1e5, f"黑方将杀应负，实际={score_b}"
+        assert score_b < -1e5, f"Black checkmate should be negative, got={score_b}"
 
     def test_order_moves_empty_board(self):
-        """边缘情况：空棋盘走法排序"""
+        """Edge case: ordered moves on empty board"""
         board = chess.Board(None)
         moves = order_moves(board)
-        assert moves == [], f"空棋盘应无走法，实际={moves}"
+        assert moves == [], f"Empty board should have no moves, got={moves}"
 
     def test_evaluate_symmetry(self):
-        """基础功能：对称局面评估值应为 0"""
+        """Basic function: symmetric position evaluation should be 0"""
         board = chess.Board()
         score = evaluate(board)
-        # 初始局面是对称的
-        assert -10 < score < 10, f"对称局面应接近0，实际={score}"
+        # Initial position is symmetric
+        assert -10 < score < 10, f"Symmetric position should be near 0, got={score}"
 
     def test_king_vs_king_evaluate(self):
-        """边缘情况：王vs王应返回0（子力不足）"""
+        """Edge case: king vs king should return 0 (insufficient material)"""
         board = chess.Board("8/8/8/8/8/8/k7/K7 w - - 0 1")
         score = evaluate(board)
         assert score == 0

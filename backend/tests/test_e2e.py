@@ -1,7 +1,7 @@
-"""端到端集成测试 — 验证后端 API 完整流程
+"""End-to-end integration tests — verify backend API complete flow
 
-通过 httpx.AsyncClient + ASGITransport 直接测试 FastAPI 应用，
-覆盖创建游戏、走子、AI 应答、状态查询等完整场景。
+Uses httpx.AsyncClient + ASGITransport to directly test the FastAPI app,
+covering full scenarios: create game, make moves, AI response, status query, etc.
 """
 import pytest
 from httpx import AsyncClient
@@ -9,63 +9,63 @@ from app.game_manager import game_manager
 
 
 # =============================================================================
-# /health 健康检查
+# /health Health Check
 # =============================================================================
 
 class TestHealthEndpoint:
-    """健康检查端点测试"""
+    """Health check endpoint tests"""
 
     async def test_health_returns_ok(self, async_client: AsyncClient):
-        """正常路径：/health 返回 status: ok"""
+        """Happy path: /health returns status: ok"""
         resp = await async_client.get("/health")
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
 
     async def test_root_returns_message(self, async_client: AsyncClient):
-        """正常路径：/ 返回 API 信息"""
+        """Happy path: / returns API info"""
         resp = await async_client.get("/")
         assert resp.status_code == 200
         assert "message" in resp.json()
 
 
 # =============================================================================
-# 完整对局流程
+# Full Game Flow
 # =============================================================================
 
 class TestFullGameFlow:
-    """完整对局流程集成测试"""
+    """Full game flow integration tests"""
 
     @pytest.fixture(autouse=True)
     async def reset_games(self):
-        """每个测试前清理游戏状态"""
+        """Clean up game state before each test"""
         game_manager._games.clear()
         game_manager._game_locks.clear()
         yield
 
     async def test_full_game_flow(self, async_client: AsyncClient):
-        """正常路径：创建游戏 → 走子 → AI 应答 → 再走子 → 获取状态"""
-        # Step 1: 创建游戏
+        """Happy path: create game → move → AI response → move again → get status"""
+        # Step 1: Create game
         resp = await async_client.post("/api/games", json={"difficulty": 2})
         assert resp.status_code == 201
         data = resp.json()
         game_id = data["game_id"]
         assert data["turn"] == "w"
         assert data["status"] == "playing"
-        assert len(data["legal_moves"]) == 20  # 初始 20 种走法
+        assert len(data["legal_moves"]) == 20  # Initial 20 legal moves
 
-        # Step 2: 走子 e2e4 — 白方走 e4，AI（黑方）应答
+        # Step 2: Make move e2e4 — white plays e4, AI (black) responds
         resp = await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "e2", "to_sq": "e4"},
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["turn"] == "w"  # AI 走后回到白方回合
-        assert data["ai_move"] is not None  # AI 应有应答
-        assert len(data["ai_move"]) in (4, 5)  # UCI 格式
+        assert data["turn"] == "w"  # Back to white's turn after AI moves
+        assert data["ai_move"] is not None  # AI should have responded
+        assert len(data["ai_move"]) in (4, 5)  # UCI format
         assert data["status"] in ("playing", "check")
 
-        # Step 3: 再走子 d2d4
+        # Step 3: Make another move d2d4
         resp = await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "d2", "to_sq": "d4"},
@@ -75,7 +75,7 @@ class TestFullGameFlow:
         assert data["turn"] == "w"
         assert data["ai_move"] is not None
 
-        # Step 4: 获取游戏状态
+        # Step 4: Get game state
         resp = await async_client.get(f"/api/games/{game_id}")
         assert resp.status_code == 200
         data = resp.json()
@@ -83,14 +83,14 @@ class TestFullGameFlow:
         assert data["status"] in ("playing", "check", "checkmate", "stalemate", "draw")
         assert "legal_moves" in data
 
-        # Step 5: 获取合法走法
+        # Step 5: Get legal moves
         resp = await async_client.get(f"/api/games/{game_id}/legal-moves")
         assert resp.status_code == 200
         assert "legal_moves" in resp.json()
         assert len(resp.json()["legal_moves"]) > 0
 
     async def test_consecutive_moves(self, async_client: AsyncClient):
-        """正常路径：连续三步走子"""
+        """Happy path: three consecutive moves"""
         resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = resp.json()["game_id"]
 
@@ -103,17 +103,17 @@ class TestFullGameFlow:
             assert resp.json()["ai_move"] is not None
 
     async def test_game_state_consistency(self, async_client: AsyncClient):
-        """正常路径：多次 GET 返回一致的游戏状态"""
+        """Happy path: multiple GET requests return consistent game state"""
         resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = resp.json()["game_id"]
 
-        # 走子前两次获取应该一致
+        # Two GETs before any move should be consistent
         state1 = (await async_client.get(f"/api/games/{game_id}")).json()
         state2 = (await async_client.get(f"/api/games/{game_id}")).json()
         assert state1["fen"] == state2["fen"]
         assert state1["turn"] == state2["turn"]
 
-        # 走子后状态应变化
+        # State should change after a move
         await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "e2", "to_sq": "e4"},
@@ -123,20 +123,20 @@ class TestFullGameFlow:
 
 
 # =============================================================================
-# Swagger / OpenAPI 文档
+# Swagger / OpenAPI Docs
 # =============================================================================
 
 class TestSwaggerDocs:
-    """OpenAPI 文档测试"""
+    """OpenAPI documentation tests"""
 
     async def test_swagger_docs_available(self, async_client: AsyncClient):
-        """正常路径：Swagger 文档可访问"""
+        """Happy path: Swagger docs are accessible"""
         resp = await async_client.get("/docs")
         assert resp.status_code == 200
         assert "text/html" in resp.headers.get("content-type", "")
 
     async def test_openapi_json(self, async_client: AsyncClient):
-        """正常路径：OpenAPI JSON schema 包含全部端点"""
+        """Happy path: OpenAPI JSON schema contains all endpoints"""
         resp = await async_client.get("/openapi.json")
         assert resp.status_code == 200
         schema = resp.json()

@@ -85,7 +85,7 @@ async def make_move(game_id: str, req: MoveRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # AI 走子
+    # AI makes its move
     ai_move_uci = None
     if updated_session.status not in ("checkmate", "stalemate", "draw"):
         try:
@@ -100,7 +100,7 @@ async def make_move(game_id: str, req: MoveRequest):
                 updated_session.status = _derive_board_status(updated_session.board)
             ai_move_uci = ai_move.uci()
 
-    # 重新获取最新状态
+    # Re-fetch latest state
     session = await game_manager.get_game(game_id)
     response = _session_to_move_response(session)
     response.ai_move = ai_move_uci

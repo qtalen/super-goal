@@ -1,12 +1,12 @@
 """
-国际象棋 AI 引擎 — Minimax + Alpha-Beta 剪枝
+Chess AI Engine — Minimax + Alpha-Beta Pruning
 
-提供局面评估、走法排序、搜索和走法选择功能。
+Provides board evaluation, move ordering, search, and move selection.
 """
 import chess
 import random
 
-# 棋子基础价值
+# Piece base values
 PIECE_VALUES = {
     chess.PAWN: 100,
     chess.KNIGHT: 320,
@@ -16,7 +16,7 @@ PIECE_VALUES = {
     chess.KING: 20000,
 }
 
-# 兵的位置价值表（8x8，从白方视角，行 0=第8排，行 7=第1排）
+# Pawn position value table (8x8, from white's perspective, row 0 = rank 8, row 7 = rank 1)
 PAWN_TABLE = [
     [0,   0,   0,   0,   0,   0,   0,   0],
     [50,  50,  50,  50,  50,  50,  50,  50],
@@ -28,7 +28,7 @@ PAWN_TABLE = [
     [0,   0,   0,   0,   0,   0,   0,   0],
 ]
 
-# 马的位置价值表
+# Knight position value table
 KNIGHT_TABLE = [
     [-50, -40, -30, -30, -30, -30, -40, -50],
     [-40, -20, 0,   0,   0,   0,   -20, -40],
@@ -40,7 +40,7 @@ KNIGHT_TABLE = [
     [-50, -40, -30, -30, -30, -30, -40, -50],
 ]
 
-# 象的位置价值表
+# Bishop position value table
 BISHOP_TABLE = [
     [-20, -10, -10, -10, -10, -10, -10, -20],
     [-10, 0,   0,   0,   0,   0,   0,   -10],
@@ -52,7 +52,7 @@ BISHOP_TABLE = [
     [-20, -10, -10, -10, -10, -10, -10, -20],
 ]
 
-# 车的位置价值表
+# Rook position value table
 ROOK_TABLE = [
     [0,   0,   0,   0,   0,   0,   0,   0],
     [5,   10,  10,  10,  10,  10,  10,  5],
@@ -64,7 +64,7 @@ ROOK_TABLE = [
     [0,   0,   0,   5,   5,   0,   0,   0],
 ]
 
-# 后的位置价值表
+# Queen position value table
 QUEEN_TABLE = [
     [-20, -10, -10, -5,  -5,  -10, -10, -20],
     [-10, 0,   0,   0,   0,   0,   0,   -10],
@@ -76,7 +76,7 @@ QUEEN_TABLE = [
     [-20, -10, -10, -5,  -5,  -10, -10, -20],
 ]
 
-# 王的位置价值表（中局）
+# King position value table (middlegame)
 KING_TABLE = [
     [-30, -40, -40, -50, -50, -40, -40, -30],
     [-30, -40, -40, -50, -50, -40, -40, -30],
@@ -90,19 +90,19 @@ KING_TABLE = [
 
 
 def _get_position_value(piece: chess.Piece, square: int) -> int:
-    """根据棋子和位置返回位置价值（白方视角）
+    """Return position value based on piece type and square (white's perspective)
 
-    参数:
-        piece: 棋子对象
-        square: 格子索引（0-63）
+    Args:
+        piece: The chess piece
+        square: Square index (0-63)
 
-    返回:
-        位置价值（正数表示该位置对白方有利）
+    Returns:
+        Position value (positive means the position favors white)
     """
-    row = square // 8  # 0=第8排, 7=第1排
-    col = square % 8   # 0=a列, 7=h列
+    row = square // 8  # 0 = rank 8, 7 = rank 1
+    col = square % 8   # 0 = a-file, 7 = h-file
 
-    # 黑方棋子的视角需要翻转行
+    # Flip row for black pieces perspective
     if piece.color == chess.BLACK:
         row = 7 - row
 
@@ -122,19 +122,19 @@ def _get_position_value(piece: chess.Piece, square: int) -> int:
 
 
 def evaluate(board: chess.Board) -> float:
-    """局面评估函数
+    """Board evaluation function
 
-    综合考虑子力价值、位置价值。
-    正值 = 白方优势，负值 = 黑方优势。
+    Considers both material value and positional value.
+    Positive = white advantage, Negative = black advantage.
 
-    参数:
-        board: 当前棋局
+    Args:
+        board: Current chess board
 
-    返回:
-        评估分值
+    Returns:
+        Evaluation score
     """
     if board.is_checkmate():
-        # 轮到谁走谁输
+        # Side to move loses
         return -1e6 if board.turn == chess.WHITE else 1e6
     if board.is_stalemate() or board.is_insufficient_material():
         return 0
@@ -146,9 +146,9 @@ def evaluate(board: chess.Board) -> float:
         if piece is None:
             continue
 
-        # 基础价值
+        # Base material value
         value = PIECE_VALUES[piece.piece_type]
-        # 位置价值
+        # Positional value
         value += _get_position_value(piece, square)
 
         if piece.color == chess.WHITE:
@@ -160,13 +160,13 @@ def evaluate(board: chess.Board) -> float:
 
 
 def order_moves(board: chess.Board) -> list[chess.Move]:
-    """MVV-LVA 走法排序：吃子走法优先，按 victim_value - attacker_value 降序
+    """MVV-LVA move ordering: captures first, sorted by victim_value - attacker_value descending
 
-    参数:
-        board: 当前棋局
+    Args:
+        board: Current chess board
 
-    返回:
-        排序后的走法列表
+    Returns:
+        Ordered list of moves
     """
     def move_priority(move: chess.Move) -> int:
         if board.is_capture(move):
@@ -192,17 +192,17 @@ def minimax(
     beta: float,
     is_maximizing: bool,
 ) -> float:
-    """Minimax with Alpha-Beta pruning（递归）
+    """Minimax with Alpha-Beta pruning (recursive)
 
-    参数:
-        board: 当前棋局
-        depth: 剩余搜索深度
-        alpha: Alpha 值（当前能保证的最大值）
-        beta: Beta 值（对手能保证的最小值）
-        is_maximizing: 当前层是否为最大化层（白方）
+    Args:
+        board: Current chess board
+        depth: Remaining search depth
+        alpha: Alpha value (best score the maximizer can guarantee)
+        beta: Beta value (best score the minimizer can guarantee)
+        is_maximizing: Whether the current layer is maximizing (white)
 
-    返回:
-        评估分值
+    Returns:
+        Evaluation score
     """
     if depth == 0 or board.is_game_over():
         return evaluate(board)
@@ -218,7 +218,7 @@ def minimax(
             max_eval = max(max_eval, eval_score)
             alpha = max(alpha, eval_score)
             if beta <= alpha:
-                break  # Beta 剪枝
+                break  # Beta cutoff
         return max_eval
     else:
         min_eval = 1e9
@@ -229,32 +229,32 @@ def minimax(
             min_eval = min(min_eval, eval_score)
             beta = min(beta, eval_score)
             if beta <= alpha:
-                break  # Alpha 剪枝
+                break  # Alpha cutoff
         return min_eval
 
 
 def select_move(board: chess.Board, difficulty: int) -> chess.Move | None:
-    """AI 选择走法主入口
+    """AI move selection entry point
 
-    参数:
-        board: 当前棋局
-        difficulty: 难度级别（1=初级, 2=中级, 3=高级）
+    Args:
+        board: Current chess board
+        difficulty: Difficulty level (1 = beginner, 2 = intermediate, 3 = advanced)
 
-    返回:
-        选择的走法，无合法走法时返回 None
+    Returns:
+        Selected move, or None if no legal moves
     """
     if board.is_game_over() or board.legal_moves.count() == 0:
         return None
 
-    # 搜索深度配置
+    # Search depth configuration
     depth_map = {
-        1: random.choice([1, 2]),  # 初级: 1-2 层，随机变化
-        2: 3,                       # 中级: 3 层
-        3: 4,                       # 高级: 4 层
+        1: random.choice([1, 2]),  # Beginner: 1-2 ply, randomized
+        2: 3,                       # Intermediate: 3 ply
+        3: 4,                       # Advanced: 4 ply
     }
     depth = depth_map.get(difficulty, 2)
 
-    # 高级难度在棋局中期适当增加搜索深度
+    # Increase search depth for advanced mode in midgame
     if difficulty >= 2 and board.fullmove_number > 10:
         depth += 1
 
@@ -281,9 +281,9 @@ def select_move(board: chess.Board, difficulty: int) -> chess.Move | None:
                 best_score = score
                 best_move = move
 
-    # 初级难度随机扰动：从 top-3 走法中随机选一个
+    # Beginner difficulty: random perturbation — pick randomly from top-3 moves
     if difficulty == 1 and len(moves) > 1:
-        # 重新计算所有走法的分值
+        # Recalculate all move scores
         move_scores = []
         for move in moves:
             board.push(move)
@@ -294,7 +294,7 @@ def select_move(board: chess.Board, difficulty: int) -> chess.Move | None:
             board.pop()
             move_scores.append((move, score))
 
-        # 按分值排序取前 3
+        # Sort by score and take top 3
         move_scores.sort(key=lambda x: x[1], reverse=is_maximizing)
         top_moves = move_scores[:min(3, len(move_scores))]
         best_move = random.choice(top_moves)[0]

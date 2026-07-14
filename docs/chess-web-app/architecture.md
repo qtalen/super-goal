@@ -1,112 +1,112 @@
-# 国际象棋 Web 应用 — 架构设计文档
+# Chess Web App — Architecture Design Document
 
 **Task Slug**: `chess-web-app`
-**编写日期**: 2026-07-07
-**状态**: 已锁定
+**Written**: 2026-07-07
+**Status**: Locked
 
 ---
 
-## 1. 项目目录结构
+## 1. Project Directory Structure
 
 ```
 super-loop/
 │
-├── backend/                          # Python FastAPI 后端
-│   ├── main.py                       # FastAPI 应用入口 + CORS 配置
-│   ├── pyproject.toml                # 依赖管理（uv）
+├── backend/                          # Python FastAPI Backend
+│   ├── main.py                       # FastAPI application entry + CORS configuration
+│   ├── pyproject.toml                # Dependency management (uv)
 │   ├── app/
 │   │   ├── __init__.py
-│   │   ├── models.py                 # 数据模型（GameSession, GameState）
-│   │   ├── game_manager.py           # 游戏会话管理器（线程安全）
-│   │   ├── ai_engine.py              # AI 引擎（Minimax + Alpha-Beta）
+│   │   ├── models.py                 # Data models (GameSession, GameState)
+│   │   ├── game_manager.py           # Game session manager (thread-safe)
+│   │   ├── ai_engine.py              # AI engine (Minimax + Alpha-Beta)
 │   │   └── routers/
 │   │       ├── __init__.py
-│   │       └── games.py              # API 路由定义
+│   │       └── games.py              # API route definitions
 │
-├── frontend/                         # React + TypeScript + Vite 前端
-│   ├── package.json                  # 依赖管理（pnpm）
+├── frontend/                         # React + TypeScript + Vite Frontend
+│   ├── package.json                  # Dependency management (pnpm)
 │   ├── tsconfig.json
-│   ├── vite.config.ts                # Vite 配置（含开发代理）
+│   ├── vite.config.ts                # Vite configuration (with dev proxy)
 │   ├── index.html
 │   ├── src/
-│   │   ├── main.tsx                  # React 入口
-│   │   ├── App.tsx                   # 根组件，组合所有子组件
+│   │   ├── main.tsx                  # React entry point
+│   │   ├── App.tsx                   # Root component, composes all child components
 │   │   ├── types/
-│   │   │   └── index.ts              # TypeScript 类型定义
+│   │   │   └── index.ts              # TypeScript type definitions
 │   │   ├── components/
-│   │   │   ├── Board.tsx             # 棋盘组件（8×8 网格）
-│   │   │   ├── Square.tsx            # 单个格子渲染
-│   │   │   ├── Piece.tsx             # 棋子 Unicode 显示
-│   │   │   ├── ControlPanel.tsx      # 控制面板（难度/新游戏/悔棋）
-│   │   │   └── GameStatus.tsx        # 游戏状态显示
+│   │   │   ├── Board.tsx             # Board component (8×8 grid)
+│   │   │   ├── Square.tsx            # Single square rendering
+│   │   │   ├── Piece.tsx             # Piece Unicode display
+│   │   │   ├── ControlPanel.tsx      # Control panel (difficulty/new game/undo)
+│   │   │   └── GameStatus.tsx        # Game status display
 │   │   ├── api/
-│   │   │   └── chessApi.ts           # API 客户端封装
+│   │   │   └── chessApi.ts           # API client wrapper
 │   │   ├── context/
-│   │   │   └── GameContext.tsx        # 全局游戏状态（Context + useReducer）
+│   │   │   └── GameContext.tsx        # Global game state (Context + useReducer)
 │   │   └── styles/
-│   │       ├── global.scss           # 全局样式 + CSS 变量
-│   │       ├── Board.scss            # 棋盘样式
-│   │       └── ControlPanel.scss     # 控制面板样式
+│   │       ├── global.scss           # Global styles + CSS variables
+│   │       ├── Board.scss            # Board styles
+│   │       └── ControlPanel.scss     # Control panel styles
 │
 └── docs/
     └── chess-web-app/
-        ├── reqs-manifest.md          # 需求清单（已锁定）
-        └── architecture.md           # 本文件
+        ├── reqs-manifest.md          # Requirements manifest (locked)
+        └── architecture.md           # This file
 ```
 
-### 目录设计原则
+### Directory Design Principles
 
-| 原则 | 说明 |
-|------|------|
-| **关注点分离** | 前端/后端完全独立，通过 REST API 通信 |
-| **扁平路由层** | routers/ 只做请求路由和参数校验，业务逻辑下沉到 game_manager |
-| **单一职责** | models/game_manager/ai_engine 各司其职，不互相耦合 |
-| **无持久化** | 所有数据在内存中，进程重启即丢失 |
+| Principle | Description |
+|-----------|-------------|
+| **Separation of concerns** | Frontend/Backend completely independent, communicating via REST API |
+| **Flat routing layer** | routers/ only handles request routing and parameter validation, business logic delegated to game_manager |
+| **Single responsibility** | models/game_manager/ai_engine each have their own role, no mutual coupling |
+| **No persistence** | All data in memory, lost on process restart |
 
 ---
 
-## 2. 后端架构
+## 2. Backend Architecture
 
-### 2.1 分层职责
+### 2.1 Layer Responsibilities
 
 ```
 HTTP Request
     │
     ▼
-routers/games.py          ← 路由层：参数解析、请求校验、状态码
+routers/games.py          ← Routing layer: parameter parsing, request validation, status codes
     │
     ▼
-game_manager.py           ← 业务层：会话生命周期管理、走法校验委托
+game_manager.py           ← Business layer: session lifecycle management, move validation delegation
     │
-    ├── models.py          ← 数据层：GameSession 数据类
-    └── ai_engine.py       ← 算法层：AI 走法计算
+    ├── models.py          ← Data layer: GameSession data class
+    └── ai_engine.py       ← Algorithm layer: AI move computation
 ```
 
-### 2.2 models.py — 数据模型
+### 2.2 models.py — Data Models
 
 ```python
 @dataclass
 class GameSession:
-    game_id: str                    # UUID 字符串
-    board: chess.Board              # python-chess Board 实例
+    game_id: str                    # UUID string
+    board: chess.Board              # python-chess Board instance
     difficulty: int                 # 1|2|3
     status: str                     # "playing" | "check" | "checkmate" | "stalemate" | "draw"
-    last_move: str | None           # 上一步走法的 UCI 表示（如 "e2e4"）
-    created_at: float               # time.time() 时间戳
+    last_move: str | None           # UCI representation of last move (e.g. "e2e4")
+    created_at: float               # time.time() timestamp
 ```
 
-关键设计决策：
+Key design decisions:
 
-- **不存储走法历史列表**：python-chess Board 内部通过 `board.move_stack` 保留完整历史，需要时可推导
-- **status 由 Board 实时推导**：每次走子后调用 `board.is_checkmate()`、`board.is_stalemate()` 等判断
-- **不可变返回**：API 返回的是 board 的快照拷贝，不会直接暴露内部引用
+- **Do not store move history list**: python-chess Board retains complete history internally via `board.move_stack`, derivable when needed
+- **status derived from Board in real time**: call `board.is_checkmate()`, `board.is_stalemate()`, etc. after each move
+- **Immutable returns**: API returns a snapshot copy of the board, never exposes internal references directly
 
-### 2.3 game_manager.py — 游戏会话管理器
+### 2.3 game_manager.py — Game Session Manager
 
 ```python
 class GameManager:
     _games: dict[str, GameSession]   # game_id → GameSession
-    _lock: asyncio.Lock              # 异步锁保证线程安全
+    _lock: asyncio.Lock              # Async lock for thread safety
 
     async def create_game(difficulty: int) -> GameSession
     async def get_game(game_id: str) -> GameSession | None
@@ -115,26 +115,26 @@ class GameManager:
     async def get_legal_moves(game_id: str) -> list[str]
 ```
 
-设计要点：
+Design points:
 
-- **单例模式**：模块级全局实例 `game_manager = GameManager()`
-- **asyncio.Lock 保证原子性**：所有读写操作都通过 `async with self._lock` 保护
-- **生存周期**：会话永不过期（原型阶段），后续可添加空闲超时清理
-- **走子流程**：`make_move()` 内部依次执行——校验合法性 → 执行走子 → 检查游戏状态 → 调用 AI → 再次检查状态 → 返回
+- **Singleton pattern**: module-level global instance `game_manager = GameManager()`
+- **asyncio.Lock ensures atomicity**: all read/write operations protected by `async with self._lock`
+- **Lifetime**: sessions never expire (prototype stage); idle timeout cleanup can be added later
+- **Move flow**: `make_move()` internally executes sequentially — validate legality → execute move → check game status → call AI → check status again → return
 
-### 2.4 ai_engine.py — AI 引擎
+### 2.4 ai_engine.py — AI Engine
 
-核心算法：Minimax + Alpha-Beta 剪枝
+Core algorithm: Minimax + Alpha-Beta Pruning
 
 ```python
 def select_move(board: chess.Board, difficulty: int) -> chess.Move | None:
     """
-    主入口：
-    1. 根据 difficulty 选择搜索深度
-    2. 走法排序（MVV-LVA 启发式）
-    3. 调用 minimax 搜索
-    4. 初级难度加入随机扰动
-    5. 异步超时保护（5 秒上限）
+    Main entry point:
+    1. Select search depth based on difficulty
+    2. Move ordering (MVV-LVA heuristic)
+    3. Call minimax search
+    4. Add random perturbation at beginner difficulty
+    5. Async timeout protection (5-second cap)
     """
 
 def minimax(board: chess.Board, depth: int, alpha: int, beta: int,
@@ -142,53 +142,53 @@ def minimax(board: chess.Board, depth: int, alpha: int, beta: int,
 
 def evaluate(board: chess.Board) -> float:
     """
-    评估函数（AI 执白时正值 = 白方优势）：
-    + 棋子基础价值
-    + 位置价值表（中心控制）
-    + 机动性调整（合法走法数量）
+    Evaluation function (positive value = white advantage when AI plays white):
+    + Piece base value
+    + Position value table (center control)
+    + Mobility adjustment (number of legal moves)
     """
 ```
 
-#### 评估函数设计
+#### Evaluation Function Design
 
-| 棋子 | 基础价值 | 位置策略 |
-|------|---------|---------|
-| 兵 (P) | 100 | 中心兵 (+10)，前进兵 (+5)，边路兵 (-5) |
-| 马 (N) | 320 | 中心马 (+15)，边角马 (-10) |
-| 象 (B) | 330 | 象位表（中心对角线加分） |
-| 车 (R) | 500 | 开放线加分，第七横排加分 |
-| 后 (Q) | 900 | 中心控制加分，但不过早出动 |
-| 王 (K) | 20000 | 中局安全位置，残局中心化 |
+| Piece | Base Value | Position Strategy |
+|-------|-----------|-------------------|
+| Pawn (P) | 100 | Center pawns (+10), advanced pawns (+5), edge pawns (-5) |
+| Knight (N) | 320 | Center knights (+15), edge/corner knights (-10) |
+| Bishop (B) | 330 | Bishop square table (center diagonal bonus) |
+| Rook (R) | 500 | Bonus on open files, bonus on 7th rank |
+| Queen (Q) | 900 | Center control bonus, but avoid early development |
+| King (K) | 20000 | Safe position in middlegame, centralization in endgame |
 
-#### 搜索难度配置
+#### Search Difficulty Configuration
 
-| 难度 | 搜索深度 | 特点 |
-|------|---------|------|
-| 1（初级） | 1~2 | 走法中加入随机扰动（从 top-3 走法中随机选取） |
-| 2（中级） | 2~3 | 完整 alpha-beta，无扰动 |
-| 3（高级） | 3~4 | 更精细的评估 + 扩展搜索（将军时增加搜索深度） |
+| Difficulty | Search Depth | Characteristics |
+|------------|-------------|-----------------|
+| 1 (Beginner) | 1~2 | Random perturbation added to moves (randomly pick from top-3 moves) |
+| 2 (Intermediate) | 2~3 | Full alpha-beta, no perturbation |
+| 3 (Advanced) | 3~4 | Finer evaluation + extended search (increased depth on checks) |
 
-#### 性能优化
+#### Performance Optimization
 
-1. **走法排序（MVV-LVA）**：先搜索吃子走法（最有希望剪枝的），提高剪枝效率
-2. **Alpha-Beta 剪枝**：严格实现，剪枝不搜索的分支
-3. **超时保护**：`asyncio.wait_for(..., timeout=5.0)` 兜底，超时时返回当前最佳走法
-4. **迭代加深（可选）**：可在 1 秒内完成浅层搜索，剩余时间继续加深
+1. **Move ordering (MVV-LVA)**: search captures first (most promising for pruning), improving pruning efficiency
+2. **Alpha-Beta pruning**: strictly implemented, prunes branches not worth searching
+3. **Timeout protection**: `asyncio.wait_for(..., timeout=5.0)` fallback, returns current best move on timeout
+4. **Iterative deepening (optional)**: can complete shallow search within 1 second, continue deeper with remaining time
 
 ---
 
-## 3. API 设计
+## 3. API Design
 
-### 3.1 端点概览
+### 3.1 Endpoint Overview
 
-| 方法 | 路径 | 描述 | 请求体 | 返回体 |
-|------|------|------|--------|--------|
-| POST | `/api/games` | 创建新游戏 | `{ "difficulty": 1|2|3 }` | `GameState` |
-| GET | `/api/games/{game_id}` | 查询游戏状态 | — | `GameState` |
-| POST | `/api/games/{game_id}/move` | 玩家走子 + AI 应答 | `{ "from": "e2", "to": "e4", "promotion": "q"\|null }` | `MoveResponse` |
-| GET | `/api/games/{game_id}/legal-moves` | 获取合法走法 | — | `{ "legal_moves": [...] }` |
+| Method | Path | Description | Request Body | Response Body |
+|--------|------|-------------|-------------|---------------|
+| POST | `/api/games` | Create new game | `{ "difficulty": 1\|2\|3 }` | `GameState` |
+| GET | `/api/games/{game_id}` | Query game state | — | `GameState` |
+| POST | `/api/games/{game_id}/move` | Player move + AI response | `{ "from": "e2", "to": "e4", "promotion": "q"\|null }` | `MoveResponse` |
+| GET | `/api/games/{game_id}/legal-moves` | Get legal moves | — | `{ "legal_moves": [...] }` |
 
-### 3.2 统一返回格式 — GameState
+### 3.2 Unified Response Format — GameState
 
 ```json
 {
@@ -217,32 +217,32 @@ def evaluate(board: chess.Board) -> float:
 }
 ```
 
-### 3.4 错误处理
+### 3.4 Error Handling
 
-| 场景 | HTTP 状态码 | 返回体 |
-|------|------------|--------|
-| game_id 不存在 | 404 | `{ "detail": "Game not found" }` |
-| 非法走子 | 400 | `{ "detail": "Illegal move: e2e5" }` |
-| 游戏已结束 | 400 | `{ "detail": "Game is already over" }` |
-| 不是白方回合 | 400 | `{ "detail": "It's not your turn" }` |
-| 难度参数无效 | 422 | Pydantic 自动校验错误 |
+| Scenario | HTTP Status | Response Body |
+|----------|------------|---------------|
+| game_id does not exist | 404 | `{ "detail": "Game not found" }` |
+| Illegal move | 400 | `{ "detail": "Illegal move: e2e5" }` |
+| Game already over | 400 | `{ "detail": "Game is already over" }` |
+| Not white's turn | 400 | `{ "detail": "It's not your turn" }` |
+| Invalid difficulty parameter | 422 | Pydantic auto-validation error |
 
-### 3.5 CORS 配置
+### 3.5 CORS Configuration
 
-在 `main.py` 中配置：
+Configured in `main.py`:
 
 ```python
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite 开发服务器
+    allow_origins=["http://localhost:5173"],  # Vite dev server
     allow_methods=["*"],
     allow_headers=["*"],
 )
 ```
 
-### 3.6 Vite 开发代理
+### 3.6 Vite Development Proxy
 
-`vite.config.ts` 中配置 `/api` 代理到后端，避免开发时跨域问题：
+`vite.config.ts` proxies `/api` to backend to avoid cross-origin issues during development:
 
 ```typescript
 server: {
@@ -254,35 +254,35 @@ server: {
 
 ---
 
-## 4. 前端架构
+## 4. Frontend Architecture
 
-### 4.1 组件树
+### 4.1 Component Tree
 
 ```
 App
 ├── ControlPanel
-│   ├── 难度选择下拉框 (初/中/高)
-│   ├── 新游戏按钮
-│   └── 悔棋按钮 (back_arrow)
+│   ├── Difficulty dropdown (Beginner/Intermediate/Advanced)
+│   ├── New Game button
+│   └── Undo Move button (back_arrow)
 │
 ├── Board
-│   └── Square × 64 (8行 × 8列)
-│       ├── 行列坐标标注 (a-h, 1-8)
-│       ├── 深浅交替背景
-│       ├── 选中高亮 (黄色)
-│       ├── 合法走法标记 (绿色圆点)
-│       └── Piece (有棋子时渲染)
-│           └── Unicode 棋子字符
+│   └── Square × 64 (8 rows × 8 cols)
+│       ├── Rank/file labels (a-h, 1-8)
+│       ├── Alternating light/dark background
+│       ├── Selected highlight (yellow)
+│       ├── Legal move markers (green dots)
+│       └── Piece (rendered when piece present)
+│           └── Unicode chess piece character
 │
 └── GameStatus
-    ├── 回合指示 (白方走 / 黑方走)
-    ├── 状态 (将军 / 将杀 / 和棋 / 逼和)
-    └── 走法历史显示 (棋谱)
+    ├── Turn indicator (White to move / Black to move)
+    ├── Status (Check / Checkmate / Draw / Stalemate)
+    └── Move history display (notation)
 ```
 
-### 4.2 状态管理 — GameContext
+### 4.2 State Management — GameContext
 
-使用 React Context + useReducer 模式：
+Uses React Context + useReducer pattern:
 
 ```typescript
 // types/index.ts
@@ -294,10 +294,10 @@ interface GameState {
   difficulty: 1 | 2 | 3;
   legalMoves: string[];
   lastMove: string | null;
-  history: string[];        // FEN 历史快照（用于悔棋）
-  selectedSquare: string | null;  // 当前选中的格子
-  boardOrientation: 'w';    // 始终从白方视角（可扩展）
-  isThinking: boolean;      // AI 计算中标记
+  history: string[];        // FEN history snapshots (for undo)
+  selectedSquare: string | null;  // Currently selected square
+  boardOrientation: 'w';    // Always from white's perspective (extensible)
+  isThinking: boolean;      // AI computing indicator
   error: string | null;
 }
 
@@ -311,34 +311,34 @@ type GameAction =
   | { type: 'RESET' };
 ```
 
-### 4.3 走子交互流程
+### 4.3 Move Interaction Flow
 
 ```
-用户点击格子
+User clicks a square
     │
     ▼
 Board.onSquareClick(square)
     │
-    ├── 无选中格子 + 格子上有己方棋子
-    │   └── dispatch SELECT_SQUARE(square) → 高亮选中 + 显示合法走法
+    ├── No square selected + square has own piece
+    │   └── dispatch SELECT_SQUARE(square) → highlight + show legal moves
     │
-    ├── 有选中格子 + 点击同一格子
-    │   └── dispatch SELECT_SQUARE(null) → 取消选中
+    ├── Square selected + click same square
+    │   └── dispatch SELECT_SQUARE(null) → deselect
     │
-    ├── 有选中格子 + 点击另一个己方棋子
-    │   └── dispatch SELECT_SQUARE(newSquare) → 切换选中
+    ├── Square selected + click another own piece
+    │   └── dispatch SELECT_SQUARE(newSquare) → switch selection
     │
-    └── 有选中格子 + 点击目标格子
-        ├── 如果是升变走法 → 弹出升变对话框 → 选择棋子
-        └── 调用 chessApi.makeMove(gameId, from, to, promotion)
-            ├── 成功 → dispatch MAKE_MOVE(response) → 更新棋盘
-            └── 失败 → dispatch SET_ERROR(errorMsg)
+    └── Square selected + click target square
+        ├── If promotion move → show promotion dialog → choose piece
+        └── Call chessApi.makeMove(gameId, from, to, promotion)
+            ├── Success → dispatch MAKE_MOVE(response) → update board
+            └── Failure → dispatch SET_ERROR(errorMsg)
 ```
 
-### 4.4 API 客户端 — chessApi.ts
+### 4.4 API Client — chessApi.ts
 
 ```typescript
-// 封装所有 fetch 调用
+// Wraps all fetch calls
 export const chessApi = {
   createGame(difficulty: 1 | 2 | 3): Promise<GameState>,
   getGame(gameId: string): Promise<GameState>,
@@ -347,21 +347,21 @@ export const chessApi = {
 };
 ```
 
-设计要点：
+Design points:
 
-- **统一错误处理**：所有方法内部 catch 网络错误，throw 结构化错误对象 `{ status, message }`
-- **请求超时**：使用 `AbortController` 设置 10 秒超时
-- **TypeScript 完全类型化**：请求体/返回体均有对应 interface
+- **Unified error handling**: all methods catch network errors internally, throw structured error objects `{ status, message }`
+- **Request timeout**: uses `AbortController` with 10-second timeout
+- **Fully typed TypeScript**: request/response bodies all have corresponding interfaces
 
-### 4.5 棋盘渲染逻辑
+### 4.5 Board Rendering Logic
 
 ```typescript
 // Board.tsx
 function Board({ fen, ... }: Props) {
-  const rows = [8, 7, 6, 5, 4, 3, 2, 1];  // 从第8排开始渲染（白方在下）
+  const rows = [8, 7, 6, 5, 4, 3, 2, 1];  // Start from rank 8 (white at bottom)
   const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
-  // 解析 FEN → 二维数组
+  // Parse FEN → 2D array
   const board = parseFen(fen);
 
   return (
@@ -389,225 +389,225 @@ function Board({ fen, ... }: Props) {
 }
 ```
 
-### 4.6 视觉反馈方案
+### 4.6 Visual Feedback Scheme
 
-| 状态 | 颜色 | 实现方式 |
-|------|------|---------|
-| 选中格子 | 黄色半透明覆盖层 | `box-shadow: inset 0 0 0 3px gold` |
-| 合法走法（无吃子） | 绿色圆点 | 伪元素 `:after` 居中 |
-| 合法走法（有吃子） | 红色边框 | `outline: 3px solid red` |
-| 上一步走法 | 蓝色半透明 | `background: rgba(0,0,255,0.1)` |
-| 将军状态 | 红色闪烁 | 王所在格子添加 pulse 动画 |
+| State | Color | Implementation |
+|-------|-------|----------------|
+| Selected square | Yellow semi-transparent overlay | `box-shadow: inset 0 0 0 3px gold` |
+| Legal move (no capture) | Green dot | Pseudo-element `:after` centered |
+| Legal move (with capture) | Red border | `outline: 3px solid red` |
+| Previous move | Blue semi-transparent | `background: rgba(0,0,255,0.1)` |
+| Check status | Red pulse | Pulse animation on king's square |
 
-### 4.7 升变处理
+### 4.7 Promotion Handling
 
-升变在前端通过模态对话框处理：
+Promotion is handled on the frontend via a modal dialog:
 
-1. 用户意图走子到第 1 或第 8 横排（兵升变条件）
-2. 前端检测到升变条件，在 `makeMove` 调用前弹出选择对话框
-3. 用户选择：后 (q) / 车 (r) / 象 (b) / 马 (n)
-4. 调用 API 时传入 `promotion` 参数
-5. 后端 python-chess 处理 `board.push(chess.Move(from, to, promotion=piece))`
+1. User intends to move a pawn to rank 1 or rank 8 (promotion condition)
+2. Frontend detects promotion condition, shows selection dialog before `makeMove` call
+3. User chooses: Queen (q) / Rook (r) / Bishop (b) / Knight (n)
+4. `promotion` parameter passed to API
+5. Backend python-chess handles `board.push(chess.Move(from, to, promotion=piece))`
 
 ---
 
-## 5. AI 引擎关键设计（详细）
+## 5. AI Engine Key Design (Detailed)
 
-### 5.1 棋子基础价值表
+### 5.1 Piece Base Value Table
 
 ```
-P (兵) = 100
-N (马) = 320
-B (象) = 330
-R (车) = 500
-Q (后) = 900
-K (王) = 20000  (确保王不会被"吃掉")
+P (Pawn)   = 100
+N (Knight) = 320
+B (Bishop) = 330
+R (Rook)   = 500
+Q (Queen)  = 900
+K (King)   = 20000  (ensures king is never "captured")
 ```
 
-### 5.2 位置价值表
+### 5.2 Position Value Tables
 
-每种子力维护一个 8×8 位置价值表（从白方视角）。关键模式：
+Each piece type maintains an 8×8 position value table (from white's perspective). Key patterns:
 
-- **中心控制**：d4, d5, e4, e5 为中心四格，所有子力在此均有分值加成
-- **兵位置**：中心兵 > 边路兵，连锁兵额外加分，孤兵减分
-- **马位置**：中心 > 边缘，d4/d5/e4/e5 最佳
-- **象位置**：长对角线 > 短对角线，中心化加分
-- **车位置**：开放线（无兵阻挡）加分，第 7 横排（对黑方底线）加分
-- **后位置**：中局不宜过早出动，残局中心化
+- **Center control**: d4, d5, e4, e5 are the four central squares, all pieces receive bonuses here
+- **Pawn positions**: central pawns > edge pawns, connected pawns get extra bonus, isolated pawns get penalty
+- **Knight positions**: center > edges, d4/d5/e4/e5 are optimal
+- **Bishop positions**: long diagonals > short diagonals, centralization bonus
+- **Rook positions**: open files (no pawn blocking) bonus, 7th rank (attacking opponent's back rank) bonus
+- **Queen positions**: avoid early development in middlegame, centralize in endgame
 
-### 5.3 机动性评估
+### 5.3 Mobility Evaluation
 
 ```
 mobility_score = len(board.legal_moves) * MOBILITY_WEIGHT
-MOBILITY_WEIGHT ≈ 5  （经验调参值）
+MOBILITY_WEIGHT ≈ 5  (empirically tuned value)
 ```
 
-机动性差异通常 ±50~200 分，有助于 AI 选择局面更开放、子力更活跃的走法。
+Mobility differences typically range ±50~200 points, helping the AI choose moves with more open positions and more active pieces.
 
-### 5.4 搜索优化
+### 5.4 Search Optimization
 
 ```
 function minimax(board, depth, alpha, beta, is_maximizing):
     if depth == 0 or game_over:
         return quiescence_search(board, alpha, beta, 3)
-        // 静态搜索：继续搜索吃子走法，解决"水平线效应"
+        // Quiescence search: continue searching captures to resolve "horizon effect"
 
     moves = order_moves(board.legal_moves, board)
-    // MVV-LVA 排序：先搜索最有希望的分支
+    // MVV-LVA ordering: search most promising branches first
 
     for move in moves:
         board.push(move)
         score = minimax(board, depth-1, alpha, beta, not is_maximizing)
         board.pop()
-        // alpha-beta 剪枝...
+        // alpha-beta pruning...
 
     return best_score
 ```
 
-### 5.5 AI 调用流程（后端 make_move 完整流程）
+### 5.5 AI Invocation Flow (Complete Backend make_move Flow)
 
 ```
-POST /api/games/{id}/move 收到请求
+POST /api/games/{id}/move request received
     │
     ▼
-1. 校验 game_id 存在
+1. Validate game_id exists
     │
     ▼
-2. 校验走法合法性（board.is_legal(move)）
-    │  └─ 非法 → 返回 400
+2. Validate move legality (board.is_legal(move))
+    │  └─ Illegal → return 400
     ▼
-3. 执行走子 board.push(move)
+3. Execute move board.push(move)
     │
     ▼
-4. 检查游戏状态
-    │  ├─ 将杀/逼和/和棋 → 设置 status，返回（AI 不走）
-    │  └─ 正常继续
+4. Check game status
+    │  ├─ Checkmate/Stalemate/Draw → set status, return (AI does not move)
+    │  └─ Normal, continue
     ▼
-5. 调用 AI: ai_engine.select_move(board, difficulty)
-    │  └─ 超时 → 返回当前最佳走法
+5. Call AI: ai_engine.select_move(board, difficulty)
+    │  └─ Timeout → return current best move
     ▼
-6. AI 走子 board.push(ai_move)
+6. AI move board.push(ai_move)
     │
     ▼
-7. 再次检查游戏状态
+7. Check game status again
     │
     ▼
-8. 返回完整 GameState（含 ai_move 字段）
+8. Return complete GameState (including ai_move field)
 ```
 
 ---
 
-## 6. 前后端交互流程
+## 6. Frontend-Backend Interaction Flow
 
-### 6.1 完整用户会话流程
-
-```
-玩家操作                             前端状态                           后端
-─────────                           ────────                          ────
-1. 选择难度 (初/中/高)
-    ↓
-2. 点击"新游戏"                    dispatch(CREATE_GAME)
-    →                              fetch POST /api/games              → 创建 GameSession
-    ← 收到 game_id, fen                                              ← 返回 GameState
-    →                              dispatch({type: 'CREATE_GAME', ...})
-    ↓
-3. 更新棋盘渲染                    Board 读取 fen，渲染棋子
-    ↓
-4. 点击己方棋子                    dispatch(SELECT_SQUARE)
-    →                              高亮选中格子 + 显示合法走法
-    ↓
-5. 点击目标格子                    dispatch(SET_THINKING, true)
-    →                              (升变时弹出选择对话框)
-    →                              fetch POST /api/games/{id}/move    → 校验走法
-    →                                                                 → AI 计算应答
-    ← 收到新状态                                                    ← 返回 MoveResponse
-    →                              dispatch(MAKE_MOVE, ...)
-    →                              dispatch(SET_THINKING, false)
-    ↓
-6. 更新棋盘渲染                    Board + GameStatus 同步更新
-    ↓
-7. 重复 4-6 直到游戏结束           status !== 'playing'
-    ↓
-8. 游戏结束显示                    GameStatus 显示将杀/和棋等
-    ↓
-9. 点击"新游戏" → 回到步骤 2
-```
-
-### 6.2 悔棋流程
+### 6.1 Complete User Session Flow
 
 ```
-1. 玩家点击"悔棋"按钮
-2. 后端弹回两步（AI 一步 + 玩家一步）：
-   - board.pop()  // 撤回 AI 走法
-   - board.pop()  // 撤回玩家走法
-3. 返回新状态（玩家回合）
-4. 前端更新状态
+Player Action                       Frontend State                     Backend
+─────────                           ────────                           ────
+1. Select difficulty (Beginner/Intermediate/Advanced)
+    ↓
+2. Click "New Game"                 dispatch(CREATE_GAME)
+    →                               fetch POST /api/games              → Create GameSession
+    ← receive game_id, fen                                             ← Return GameState
+    →                               dispatch({type: 'CREATE_GAME', ...})
+    ↓
+3. Update board rendering           Board reads fen, renders pieces
+    ↓
+4. Click own piece                  dispatch(SELECT_SQUARE)
+    →                               Highlight selected + show legal moves
+    ↓
+5. Click target square              dispatch(SET_THINKING, true)
+    →                               (Show promotion dialog if applicable)
+    →                               fetch POST /api/games/{id}/move    → Validate move
+    →                                                                  → AI compute response
+    ← receive new state                                                ← Return MoveResponse
+    →                               dispatch(MAKE_MOVE, ...)
+    →                               dispatch(SET_THINKING, false)
+    ↓
+6. Update board rendering           Board + GameStatus sync update
+    ↓
+7. Repeat 4-6 until game over       status !== 'playing'
+    ↓
+8. Game over display                GameStatus shows checkmate/draw etc.
+    ↓
+9. Click "New Game" → back to step 2
+```
 
-注：如果游戏已结束，悔棋需额外处理（先重置状态为 playing）
+### 6.2 Undo Move Flow
+
+```
+1. Player clicks "Undo Move" button
+2. Backend pops two moves (AI move + player move):
+   - board.pop()  // Undo AI move
+   - board.pop()  // Undo player move
+3. Return new state (player's turn)
+4. Frontend updates state
+
+Note: If the game is already over, undo needs extra handling (reset status to "playing" first)
 ```
 
 ---
 
-## 7. 安全与边界处理
+## 7. Security and Edge Case Handling
 
-### 7.1 输入校验
+### 7.1 Input Validation
 
-| 层面 | 校验内容 | 处理方式 |
-|------|---------|---------|
-| HTTP（Pydantic） | difficulty 范围 1-3, FEN 格式, 格子格式 | 422 Unprocessable Entity |
-| 业务（game_manager） | game_id 存在性, 走法合法性, 回合正确性 | 400/404 详细错误 |
-| AI 引擎 | board 非 None, 深度为正整数 | 防御式断言 |
+| Layer | Validation | Handling |
+|-------|-----------|----------|
+| HTTP (Pydantic) | difficulty range 1-3, FEN format, square format | 422 Unprocessable Entity |
+| Business (game_manager) | game_id existence, move legality, turn correctness | 400/404 with detailed error |
+| AI Engine | board not None, depth positive integer | Defensive assertions |
 
-### 7.2 并发安全
+### 7.2 Concurrency Safety
 
-- 所有 `GameManager` 方法使用 `asyncio.Lock` 保护
-- AI 计算期间锁不释放（计算时间可能较长，但游戏间互不干扰——锁是单会话级别，还是全局级别？）
-  - **决策**：使用 **per-game 锁**（字典嵌套锁），而非全局锁，避免不同游戏相互阻塞
-  - 实现方式：`locks: dict[str, asyncio.Lock]` + 一个保护 locks 字典本身的轻量锁
+- All `GameManager` methods protected by `asyncio.Lock`
+- Lock is not released during AI computation (computation may take time, but games don't interfere — is the lock per-session or global?)
+  - **Decision**: use **per-game locks** (nested dictionary of locks), not a global lock, to avoid different games blocking each other
+  - Implementation: `locks: dict[str, asyncio.Lock]` + a lightweight lock protecting the locks dict itself
 
-### 7.3 资源限制
+### 7.3 Resource Limits
 
-| 限制项 | 值 | 说明 |
-|--------|-----|------|
-| 最大活跃会话 | 100 | 防内存耗尽，达到上限时拒绝新游戏 |
-| AI 搜索超时 | 5 秒 | asyncio.wait_for 硬限制 |
-| API 超时 | 10 秒 | 前端 AbortController 控制 |
-| 会话闲置清理 | 1 小时（可选） | 后台任务扫描清理 |
-
----
-
-## 8. 测试策略
-
-### 8.1 后端测试
-
-| 测试类型 | 工具 | 覆盖范围 |
-|---------|------|---------|
-| 单元测试 | pytest | ai_engine.evaluate, minimax 各搜索深度 |
-| 集成测试 | pytest + httpx.AsyncClient | API 端点：创建游戏、走子、游戏状态 |
-| 边缘情况 | pytest | 将杀/逼和/升变/王车易位/吃过路兵 |
-
-### 8.2 前端测试
-
-| 测试类型 | 工具 | 覆盖范围 |
-|---------|------|---------|
-| 组件测试 | vitest + @testing-library/react | Board 渲染、Square 点击、GameStatus 显示 |
-| 上下文测试 | vitest | GameContext reducer 各种 action |
-| API 测试 | vitest + MSW | chessApi 正常/异常响应 |
-
-### 8.3 关键边缘场景
-
-- 空输入：FEN 为空、格子名为空
-- 边界值：difficulty=0, difficulty=4, depth=0
-- 异常输入：非法格子名 "z9"、"a0"、"e2e4"（不是一个格子）
-- 失败路径：走子到被对方保护的格子、游戏结束后继续走子
-- 特殊走法：王车易位（双方、各方向）、升变（4 种子力）、吃过路兵
-- 并发：两个游戏互不干扰、同一游戏两次请求的竞态
+| Limit | Value | Description |
+|-------|-------|-------------|
+| Max active sessions | 100 | Prevent memory exhaustion, reject new games at limit |
+| AI search timeout | 5 sec | asyncio.wait_for hard limit |
+| API timeout | 10 sec | Frontend AbortController control |
+| Session idle cleanup | 1 hour (optional) | Background task scanning and cleanup |
 
 ---
 
-## 9. 依赖清单
+## 8. Testing Strategy
 
-### 9.1 后端（pyproject.toml）
+### 8.1 Backend Testing
+
+| Test Type | Tool | Coverage |
+|-----------|------|----------|
+| Unit tests | pytest | ai_engine.evaluate, minimax at each search depth |
+| Integration tests | pytest + httpx.AsyncClient | API endpoints: create game, make move, game status |
+| Edge cases | pytest | Checkmate/Stalemate/Promotion/Castling/En passant |
+
+### 8.2 Frontend Testing
+
+| Test Type | Tool | Coverage |
+|-----------|------|----------|
+| Component tests | vitest + @testing-library/react | Board rendering, Square click, GameStatus display |
+| Context tests | vitest | GameContext reducer for each action |
+| API tests | vitest + MSW | chessApi normal/error responses |
+
+### 8.3 Key Edge Cases
+
+- Empty input: empty FEN, empty square name
+- Boundary values: difficulty=0, difficulty=4, depth=0
+- Invalid input: illegal square names "z9", "a0", "e2e4" (not a square)
+- Failure paths: moving to a square protected by opponent, making a move after game over
+- Special moves: Castling (both sides, both directions), Promotion (4 piece types), En passant
+- Concurrency: two games not interfering, race condition with two requests to same game
+
+---
+
+## 9. Dependency List
+
+### 9.1 Backend (pyproject.toml)
 
 ```toml
 [project]
@@ -622,7 +622,7 @@ dependencies = [
 ]
 ```
 
-### 9.2 前端（package.json — pnpm）
+### 9.2 Frontend (package.json — pnpm)
 
 ```json
 {
@@ -656,44 +656,44 @@ dependencies = [
 
 ---
 
-## 10. 实施计划（建议执行顺序）
+## 10. Implementation Plan (Suggested Order)
 
-按拓扑序依赖，分 5 轮实施：
+Organized by topological dependencies in 5 rounds:
 
-| 轮次 | 需求 | 内容 | 依赖 |
-|------|------|------|------|
-| 1 | R1, R5 | 后端/前端项目初始化，基础骨架 | — |
-| 2 | R2, R3, R6 | 游戏会话管理 + AI 引擎 + 棋盘渲染 | R1, R5 |
-| 3 | R4, R7 | REST API 端点 + 走子交互 | R2, R3, R5, R6 |
-| 4 | R8, R9 | 控制面板 + API 客户端 + 状态管理 | R4, R5, R7 |
-| 5 | R10 | 前后端联调集成验证 | R4, R7, R8, R9 |
+| Round | Requirements | Content | Depends On |
+|-------|-------------|---------|------------|
+| 1 | R1, R5 | Backend/Frontend project initialization, basic skeleton | — |
+| 2 | R2, R3, R6 | Game session management + AI engine + Board rendering | R1, R5 |
+| 3 | R4, R7 | REST API endpoints + Move interaction | R2, R3, R5, R6 |
+| 4 | R8, R9 | Control panel + API client + State management | R4, R5, R7 |
+| 5 | R10 | Frontend-backend integration verification | R4, R7, R8, R9 |
 
 ---
 
 ===SUMMARY===
 
-## 关键设计决策总结
+## Key Design Decision Summary
 
-1. **REST API 通信**：前后端完全解耦，通过 JSON over HTTP 通信，无 WebSocket，无服务器端渲染。
+1. **REST API communication**: Frontend and backend fully decoupled, communicate via JSON over HTTP, no WebSocket, no server-side rendering.
 
-2. **纯内存无持久化**：所有 GameSession 存储在内存字典中，进程重启即丢失，适合原型验证阶段。
+2. **Pure in-memory, no persistence**: All GameSessions stored in memory dict, lost on process restart, suitable for prototype validation stage.
 
-3. **per-game 锁设计**：使用 per-game 的 `asyncio.Lock` 而非全局锁，保证不同游戏会话的并发安全互不干扰。
+3. **Per-game lock design**: Uses per-game `asyncio.Lock` instead of global lock, ensuring concurrent safety across different game sessions without mutual interference.
 
-4. **AI 引擎 3 档难度**：通过搜索深度（1-2/2-3/3-4）区分难度，初级加入随机扰动，高级增加扩展搜索。
+4. **AI engine 3 difficulty levels**: Differentiated by search depth (1-2/2-3/3-4), beginner adds random perturbation, advanced adds extended search.
 
-5. **评估函数三层结构**：棋子基础价值 + 位置价值表 + 机动性评分，平衡确定性策略与局面感知。
+5. **Three-layer evaluation function**: Piece base value + position value tables + mobility scoring, balancing deterministic strategy with positional awareness.
 
-6. **React Context + useReducer**：不引入 Redux/Zustand 等外部状态库，Context 加原生 hook 已满足单页面应用需求。
+6. **React Context + useReducer**: No external state libraries like Redux/Zustand; Context with native hooks suffices for single-page application needs.
 
-7. **升变走法前端弹窗处理**：前端检测升变条件后弹出 4 子选择对话框，传入后端标准化处理。
+7. **Promotion handled via frontend dialog**: Frontend detects promotion condition, shows 4-piece selection dialog, passes to backend for standardized processing.
 
-8. **python-chess 作为核心依赖**：后端所有棋盘逻辑（规则校验、FEN 编解码、走法合法性）依赖 python-chess，不重复造轮子。
+8. **python-chess as core dependency**: All backend board logic (rule validation, FEN encoding/decoding, move legality) relies on python-chess — no reinventing the wheel.
 
-9. **MVV-LVA 走法排序**：AI 搜索前对走法按"最有希望优先"排序，显著提升 Alpha-Beta 剪枝效率。
+9. **MVV-LVA move ordering**: Moves sorted by "most promising first" before AI search, significantly improving Alpha-Beta pruning efficiency.
 
-10. **5 秒 AI 搜索超时**：所有难度统一 5 秒上限，asyncio.wait_for 兜底，保证 API 不挂死。
+10. **5-second AI search timeout**: Unified 5-second cap across all difficulties, asyncio.wait_for fallback, ensuring API never hangs.
 
-11. **CORS + Vite Proxy 双保险**：后端配置 CORS 中间件，前端 Vite 配置开发代理，生产部署只需其中一层。
+11. **CORS + Vite Proxy dual protection**: Backend configured with CORS middleware, frontend Vite configured with dev proxy — only one layer needed in production deployment.
 
-12. **前端工具链**：pnpm（包管理） + Vite（构建） + vitest（测试） + SCSS（样式），统一现代工具生态。
+12. **Frontend toolchain**: pnpm (package manager) + Vite (build) + vitest (testing) + SCSS (styling), unified modern tooling ecosystem.

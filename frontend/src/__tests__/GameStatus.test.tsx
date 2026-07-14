@@ -57,18 +57,18 @@ describe('GameStatus', () => {
 
   it('renders all three info lines', () => {
     render(<GameStatus />);
-    // 三个 <p> 元素分别对应回合、状态、难度
+    // Three <p> elements for turn, status, difficulty
     const paragraphs = screen.getAllByRole('paragraph');
     expect(paragraphs).toHaveLength(3);
   });
 
-  // 边缘情况：未知状态
+  // Edge case: unknown status
   it('renders unknown status as-is', () => {
     render(<GameStatus status="custom_status" />);
     expect(screen.getByText('custom_status')).toBeInTheDocument();
   });
 
-  // 边缘情况：未知难度
+  // Edge case: unknown difficulty
   it('renders unknown difficulty as number', () => {
     render(<GameStatus difficulty={99} />);
     expect(screen.getByText('Difficulty: 99')).toBeInTheDocument();

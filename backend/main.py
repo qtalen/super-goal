@@ -6,7 +6,7 @@ from app.routers.games import router as games_router
 
 app = FastAPI(title="Chess AI Backend")
 
-# CORS 配置：允许前端开发服务器访问
+# CORS config: allow frontend dev server access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -15,7 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 挂载路由
+# Mount routes
 app.include_router(games_router, prefix="/api")
 
 

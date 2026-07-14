@@ -31,7 +31,7 @@ vi.mock('../api/chessApi', () => {
   };
 });
 
-// ─── 辅助函数 ────────────────────────────────────────────────────────
+// ─── Helper functions ─────────────────────────────────────────────
 
 function renderWithProvider(ui: ReactElement) {
   return render(<GameProvider>{ui}</GameProvider>);
@@ -64,9 +64,9 @@ function mockMoveResponse(overrides?: Record<string, unknown>) {
   };
 }
 
-// ─── 测试套件 ────────────────────────────────────────────────────────
+// ─── Test suites ─────────────────────────────────────────────────
 
-describe('App (本地模式 / Local mode)', () => {
+describe('App (Local mode)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -108,9 +108,9 @@ describe('App (本地模式 / Local mode)', () => {
     expect(screen.getByText('Difficulty: Intermediate')).toBeInTheDocument();
   });
 
-  // 走子交互测试
+  // Move interaction tests
 
-  // 1. 点击己方棋子 → 选中（白方 e2 兵）
+  // 1. Click own piece → select (White e2 pawn)
   it('selects a piece when clicking on own piece', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
@@ -120,7 +120,7 @@ describe('App (本地模式 / Local mode)', () => {
     expect(e2.className).toContain('square--selected');
   });
 
-  // 2. 点击选中后同一格子 → 取消选中
+  // 2. Click same square again → deselect
   it('deselects when clicking the same square again', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
@@ -134,7 +134,7 @@ describe('App (本地模式 / Local mode)', () => {
     expect(e2.className).not.toContain('square--selected');
   });
 
-  // 3. 选中后点击另一个己方棋子 → 切换选中
+  // 3. Click another own piece → switch selection
   it('switches selection to another own piece', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
@@ -151,7 +151,7 @@ describe('App (本地模式 / Local mode)', () => {
     expect(d2.className).toContain('square--selected');
   });
 
-  // 4. 选中后点击目标格子走子（e2-e4）
+  // 4. Click target square to make move (e2-e4)
   it('makes a move when clicking a target square', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
@@ -167,7 +167,7 @@ describe('App (本地模式 / Local mode)', () => {
     expect(e2.className).not.toContain('square--selected');
   });
 
-  // 5. 点击敌方棋子不选中
+  // 5. Click opponent piece does not select
   it('does not select opponent piece when clicked', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
@@ -178,7 +178,7 @@ describe('App (本地模式 / Local mode)', () => {
     expect(e7.className).not.toContain('square--selected');
   });
 
-  // 6. 非法走子不改变棋盘（选中 e2 然后点击 e5）
+  // 6. Illegal move does not change board (select e2 then click e5)
   it('does not make illegal move when clicking invalid target', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
@@ -194,7 +194,7 @@ describe('App (本地模式 / Local mode)', () => {
     expect(e2.className).not.toContain('square--selected');
   });
 
-  // 7. 多次走子后检查棋盘状态更新
+  // 7. Check board state update after multiple moves
   it('updates turn after each move', () => {
     renderWithProvider(<App />);
 
@@ -208,7 +208,7 @@ describe('App (本地模式 / Local mode)', () => {
     expect(turnDisplay.textContent).toContain("Black's turn");
   });
 
-  // 8. 选中后显示合法走法标记
+  // 8. Show legal move indicators when piece is selected
   it('shows legal move indicators when piece is selected', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
@@ -221,14 +221,14 @@ describe('App (本地模式 / Local mode)', () => {
     expect(squares[e4Index].className).toContain('square--legal-move');
   });
 
-  // 9. 取消选中后隐藏合法走法标记
+  // 9. Hide legal move indicators when deselected
   it('hides legal move indicators when deselected', () => {
     renderWithProvider(<App />);
     const squares = screen.getAllByRole('button');
     const e2Index = 6 * 8 + 4;
 
     fireEvent.click(squares[e2Index]);
-    fireEvent.click(squares[e2Index]); // 取消选中
+    fireEvent.click(squares[e2Index]); // Deselect
 
     const e3Index = 5 * 8 + 4;
     const e4Index = 4 * 8 + 4;
@@ -237,15 +237,15 @@ describe('App (本地模式 / Local mode)', () => {
   });
 });
 
-// ─── API 模式测试 ────────────────────────────────────────────────────
+// ─── API mode tests ──────────────────────────────────────────────
 
-describe('App (API 模式 / API mode)', () => {
+describe('App (API mode)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // 创建游戏：点击新游戏按钮时调用 chessApi.createGame
-  it('calls chessApi.createGame when clicking 新游戏', async () => {
+  // Create game: calls chessApi.createGame when clicking New Game
+  it('calls chessApi.createGame when clicking New Game', async () => {
     const mockGame = mockGameResponse();
     vi.mocked(chessApi.createGame).mockResolvedValueOnce(mockGame as any);
 
@@ -257,7 +257,7 @@ describe('App (API 模式 / API mode)', () => {
     });
   });
 
-  // 边缘情况：创建游戏失败时显示错误
+  // Edge case: display error when createGame fails
   it('displays error banner when createGame fails', async () => {
     vi.mocked(chessApi.createGame).mockRejectedValueOnce(
       new Error('Network error'),
@@ -272,7 +272,7 @@ describe('App (API 模式 / API mode)', () => {
     });
   });
 
-  // 创建成功后可以点击关闭错误
+  // Can dismiss error after successful creation
   it('dismisses error banner when clicking close', async () => {
     vi.mocked(chessApi.createGame).mockRejectedValueOnce(
       new Error('Temp error'),
@@ -292,7 +292,7 @@ describe('App (API 模式 / API mode)', () => {
     });
   });
 
-  // 成功创建游戏后走子调用 makeMove
+  // Call makeMove after successful game creation
   it('calls chessApi.makeMove after game is created', async () => {
     const mockGame = mockGameResponse();
     vi.mocked(chessApi.createGame).mockResolvedValueOnce(mockGame as any);
@@ -300,13 +300,13 @@ describe('App (API 模式 / API mode)', () => {
 
     renderWithProvider(<App />);
 
-    // 创建游戏
+    // Create game
     fireEvent.click(screen.getByText('New Game'));
     await waitFor(() => {
       expect(chessApi.createGame).toHaveBeenCalled();
     });
 
-    // 走子 e2-e4
+    // Make move e2-e4
     const squares = screen.getAllByRole('button');
     fireEvent.click(squares[6 * 8 + 4]); // e2
     fireEvent.click(squares[4 * 8 + 4]); // e4
@@ -321,7 +321,7 @@ describe('App (API 模式 / API mode)', () => {
     });
   });
 
-  // 边缘情况：走子失败时显示错误
+  // Edge case: display error when makeMove fails
   it('displays error banner when makeMove fails', async () => {
     const mockGame = mockGameResponse();
     vi.mocked(chessApi.createGame).mockResolvedValueOnce(mockGame as any);
@@ -336,7 +336,7 @@ describe('App (API 模式 / API mode)', () => {
       expect(chessApi.createGame).toHaveBeenCalled();
     });
 
-    // 走子 e2-e4
+    // Make move e2-e4
     const squares = screen.getAllByRole('button');
     fireEvent.click(squares[6 * 8 + 4]); // e2
     fireEvent.click(squares[4 * 8 + 4]); // e4
@@ -347,16 +347,16 @@ describe('App (API 模式 / API mode)', () => {
     });
   });
 
-  // 边缘情况：新游戏时设置 thinking 状态（按钮应禁用）
+  // Edge case: set thinking state on new game (button should be disabled)
   it('disables interaction while thinking after new game', async () => {
-    // createGame 一直 pending 不 resolve
+    // createGame stays pending, never resolves
     vi.mocked(chessApi.createGame).mockReturnValueOnce(
       new Promise(() => {}),
     );
 
     renderWithProvider(<App />);
 
-    // 在点击新游戏之前，点击格子可以选中
+    // Before clicking New Game, clicking squares can select
     const squares = screen.getAllByRole('button');
     const e2Index = 6 * 8 + 4;
     fireEvent.click(squares[e2Index]);

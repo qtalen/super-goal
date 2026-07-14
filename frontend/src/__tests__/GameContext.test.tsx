@@ -58,14 +58,14 @@ describe('gameReducer', () => {
       expect(state.selectedSquare).toBe('e2');
     });
 
-    // 边缘情况：取消选中
+    // Edge case: deselect
     it('sets selectedSquare to null (deselect)', () => {
       const prev = createMockGameState({ selectedSquare: 'e2' });
       const state = gameReducer(prev, { type: 'SELECT_SQUARE', payload: null });
       expect(state.selectedSquare).toBeNull();
     });
 
-    // 边缘情况：空字符串
+    // Edge case: empty string
     it('allows empty string as selection', () => {
       const state = gameReducer(initialState, { type: 'SELECT_SQUARE', payload: '' });
       expect(state.selectedSquare).toBe('');
@@ -94,7 +94,7 @@ describe('gameReducer', () => {
       expect(state.error).toBeNull();
     });
 
-    // 边缘情况：payload 中的 fen 为 undefined，应使用当前 state.fen
+    // Edge case: fen in payload is undefined, should use current state.fen
     it('uses current fen when payload fen is undefined', () => {
       const prev = createMockGameState({ fen: 'current-fen', history: ['old-fen'] });
       const state = gameReducer(prev, {
@@ -105,7 +105,7 @@ describe('gameReducer', () => {
       expect(state.history).toEqual(['old-fen', 'current-fen']);
     });
 
-    // 边缘情况：清空 error
+    // Edge case: clear error on successful move
     it('clears error on successful move', () => {
       const prev = createMockGameState({ error: 'something went wrong' });
       const state = gameReducer(prev, {
@@ -140,7 +140,7 @@ describe('gameReducer', () => {
       expect(state.error).toBe('network error');
     });
 
-    // 边缘情况：设置 error 时自动清空 isThinking
+    // Edge case: clear isThinking when error is set
     it('clears isThinking when error is set', () => {
       const prev = createMockGameState({ isThinking: true });
       const state = gameReducer(prev, { type: 'SET_ERROR', payload: 'error' });
@@ -148,14 +148,14 @@ describe('gameReducer', () => {
       expect(state.isThinking).toBe(false);
     });
 
-    // 边缘情况：清空 error
+    // Edge case: clear error to null
     it('clears error to null', () => {
       const prev = createMockGameState({ error: 'some error' });
       const state = gameReducer(prev, { type: 'SET_ERROR', payload: null });
       expect(state.error).toBeNull();
     });
 
-    // 边缘情况：空字符串 error
+    // Edge case: empty string error
     it('allows empty string as error', () => {
       const state = gameReducer(initialState, { type: 'SET_ERROR', payload: '' });
       expect(state.error).toBe('');
@@ -181,7 +181,7 @@ describe('gameReducer', () => {
       expect(state.error).toBeNull();
     });
 
-    // 边缘情况：history 不足 2 条
+    // Edge case: history has fewer than 2 entries
     it('handles history with 0 entries gracefully (slice to empty)', () => {
       const prev = createMockGameState({ history: [] });
       const state = gameReducer(prev, {
@@ -194,7 +194,7 @@ describe('gameReducer', () => {
       expect(state.history).toEqual([]);
     });
 
-    // 边缘情况：history 只有 1 条
+    // Edge case: history has only 1 entry
     it('handles history with 1 entry gracefully (slice to empty)', () => {
       const prev = createMockGameState({ history: ['only-fen'] });
       const state = gameReducer(prev, {
@@ -224,7 +224,7 @@ describe('gameReducer', () => {
     });
   });
 
-  // ─── Default（未知 action）──────────────────────────────────────────
+  // ─── Default (unknown action) ─────────────────────────────────────
   describe('unknown action type', () => {
     it('returns state unchanged for unknown action', () => {
       const prev = createMockGameState({ gameId: 'test' });
@@ -234,7 +234,7 @@ describe('gameReducer', () => {
     });
   });
 
-  // ─── 综合：action 不修改未在 payload 中的字段 ─────────────────────────
+  // ─── Integration: action does not modify fields not in payload ───
   it('preserves boardOrientation across actions', () => {
     const state = gameReducer(initialState, {
       type: 'CREATE_GAME',

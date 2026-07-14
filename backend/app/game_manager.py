@@ -14,7 +14,7 @@ class GameManager:
         self._max_games = 100
 
     async def create_game(self, difficulty: int) -> GameSession:
-        """创建新游戏，返回 GameSession"""
+        """Create a new game, returns GameSession"""
         async with self._lock:
             if len(self._games) >= self._max_games:
                 raise ValueError("Maximum active games reached")
@@ -32,23 +32,23 @@ class GameManager:
             return session
 
     async def get_game(self, game_id: str) -> GameSession | None:
-        """获取指定游戏会话"""
+        """Get a specific game session"""
         async with self._lock:
             return self._games.get(game_id)
 
     async def delete_game(self, game_id: str) -> bool:
-        """删除游戏会话，返回是否成功"""
+        """Delete a game session, returns whether successful"""
         async with self._lock:
             if game_id in self._games:
                 del self._games[game_id]
-                # 同时清理 per-game 锁
+                # Also clean up per-game lock
                 async with self._lock_for_locks:
                     self._game_locks.pop(game_id, None)
                 return True
             return False
 
     async def get_game_lock(self, game_id: str) -> asyncio.Lock:
-        """获取 per-game 锁"""
+        """Get per-game lock"""
         async with self._lock_for_locks:
             if game_id not in self._game_locks:
                 self._game_locks[game_id] = asyncio.Lock()
@@ -56,8 +56,8 @@ class GameManager:
 
     async def make_move(self, game_id: str, from_sq: str, to_sq: str, promotion: str | None = None) -> GameSession:
         """
-        执行玩家走子（校验 → 执行 → 返回新状态）
-        注意：此方法仅执行走子校验和更新，AI 计算在 R4 中由路由层调用
+        Execute a player move (validate → execute → return new state)
+        Note: This method only validates and updates moves; AI computation is invoked by the router layer
         """
         async with self._lock:
             session = self._games.get(game_id)
@@ -67,15 +67,15 @@ class GameManager:
         async with await self.get_game_lock(game_id):
             board = session.board
 
-            # 校验游戏未结束（优先于回合校验）
+            # Validate game not over (takes priority over turn validation)
             if self._derive_status(board) != "playing":
                 raise ValueError("Game is already over")
 
-            # 校验回合
+            # Validate turn
             if board.turn != chess.WHITE:
                 raise ValueError("It's not your turn")
 
-            # 解析走法
+            # Parse move
             uci_move = f"{from_sq}{to_sq}"
             if promotion:
                 uci_move += promotion
@@ -88,31 +88,31 @@ class GameManager:
             if move not in board.legal_moves:
                 raise ValueError(f"Illegal move: {uci_move}")
 
-            # 执行走子
+            # Execute move
             board.push(move)
             session.last_move = uci_move
 
-            # 更新状态
+            # Update status
             session.status = self._derive_status(board)
 
             return session
 
     async def get_legal_moves(self, game_id: str) -> list[str]:
-        """获取当前局面的所有合法走法（UCI 格式）"""
+        """Get all legal moves for the current position (UCI format)"""
         session = await self.get_game(game_id)
         if not session:
             raise ValueError("Game not found")
         return [move.uci() for move in session.board.legal_moves]
 
     async def undo_last_two_moves(self, game_id: str) -> GameSession:
-        """悔棋：撤回 AI 一步 + 玩家一步"""
+        """Undo last two moves: one AI move + one player move"""
         session = await self.get_game(game_id)
         if not session:
             raise ValueError("Game not found")
 
         async with await self.get_game_lock(game_id):
             board = session.board
-            # 撤回两步（AI 步 + 玩家步）
+            # Undo two moves (AI move + player move)
             moves_to_undo = min(2, len(board.move_stack))
             for _ in range(moves_to_undo):
                 board.pop()
@@ -120,7 +120,7 @@ class GameManager:
             session.last_move = board.move_stack[-1].uci() if board.move_stack else None
             session.status = self._derive_status(board)
 
-            # 如果之前游戏结束，悔棋后恢复 playing
+            # If game was over, restore to playing after undo
             if session.status in ("checkmate", "stalemate", "draw"):
                 session.status = "playing"
                 if board.is_check():
@@ -129,7 +129,7 @@ class GameManager:
             return session
 
     def _derive_status(self, board: chess.Board) -> str:
-        """从 board 推导游戏状态"""
+        """Derive game status from the board"""
         if board.is_checkmate():
             return "checkmate"
         if board.is_stalemate():
@@ -143,5 +143,5 @@ class GameManager:
         return "playing"
 
 
-# 模块级单例
+# Module-level singleton
 game_manager = GameManager()

@@ -1,6 +1,21 @@
 @echo off
 title Chess AI
 echo ===== Chess AI =====
+
+REM --- 自动安装后端依赖 ---
+if not exist "%~dp0backend\.venv" (
+    echo Installing Backend dependencies...
+    cd /d "%~dp0backend" && uv sync
+    cd /d "%~dp0"
+)
+
+REM --- 自动安装前端依赖 ---
+if not exist "%~dp0frontend\node_modules" (
+    echo Installing Frontend dependencies...
+    cd /d "%~dp0frontend" && call pnpm install
+    cd /d "%~dp0"
+)
+
 echo Starting Backend...
 start "Chess Backend" cmd /c "cd /d "%~dp0backend" && .venv\Scripts\python run.py"
 timeout /t 3 /nobreak >nul

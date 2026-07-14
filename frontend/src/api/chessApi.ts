@@ -3,7 +3,7 @@ import type { GameState, MoveResponse } from '../types';
 const BASE_URL = '/api';
 const REQUEST_TIMEOUT = 10000;
 
-/** 将后端返回的 snake_case 字段名递归转换为 camelCase */
+/** Recursively convert snake_case field names from backend response to camelCase */
 function toCamelCase(obj: unknown): unknown {
   if (Array.isArray(obj)) return obj.map(toCamelCase);
   if (obj !== null && typeof obj === 'object') {

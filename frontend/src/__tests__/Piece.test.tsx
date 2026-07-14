@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import Piece from '../components/Piece';
 
 describe('Piece', () => {
-  // 正常情况：所有 6 种白棋和黑棋类型
+  // Normal case: all 6 white and black piece types
   it('renders white king (K)', () => {
     render(<Piece type="K" />);
     expect(screen.getByText('♔')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('Piece', () => {
     expect(screen.getByText('♟')).toBeInTheDocument();
   });
 
-  // 边缘情况：空输入
+  // Edge case: empty input
   it('returns null when type is null', () => {
     const { container } = render(<Piece type={null} />);
     expect(container.firstChild).toBeNull();
@@ -80,7 +80,7 @@ describe('Piece', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  // 边缘情况：非法输入
+  // Edge case: invalid input
   it('returns null for invalid piece type', () => {
     const { container } = render(<Piece type="X" />);
     expect(container.firstChild).toBeNull();
@@ -101,7 +101,7 @@ describe('Piece', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  // 样式和可访问性
+  // Styling and accessibility
   it('applies white piece CSS class', () => {
     render(<Piece type="K" />);
     const span = screen.getByText('♔');

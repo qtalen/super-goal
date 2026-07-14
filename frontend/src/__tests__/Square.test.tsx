@@ -14,7 +14,7 @@ const baseProps = {
 };
 
 describe('Square', () => {
-  // 正常情况
+  // Normal case
   it('renders light square with isLight=true', () => {
     render(<Square {...baseProps} isLight />);
     const square = screen.getByRole('button');
@@ -32,7 +32,7 @@ describe('Square', () => {
     expect(screen.getByLabelText('e4')).toBeInTheDocument();
   });
 
-  // 选中状态
+  // Selected state
   it('applies selected class when isSelected is true', () => {
     render(<Square {...baseProps} isSelected />);
     const square = screen.getByRole('button');
@@ -45,7 +45,7 @@ describe('Square', () => {
     expect(square.className).not.toContain('square--selected');
   });
 
-  // 合法走法标记
+  // Legal move marking
   it('applies legal-move class when isLegalMove is true and no piece', () => {
     render(<Square {...baseProps} isLegalMove piece={null} />);
     const square = screen.getByRole('button');
@@ -65,7 +65,7 @@ describe('Square', () => {
     expect(square.className).not.toContain('square--legal-move');
   });
 
-  // 上一步走法高亮
+  // Last move highlight
   it('applies last-move class when isLastMove is true', () => {
     render(<Square {...baseProps} isLastMove />);
     const square = screen.getByRole('button');
@@ -78,7 +78,7 @@ describe('Square', () => {
     expect(square.className).not.toContain('square--last-move');
   });
 
-  // 将军闪烁
+  // Check flashing
   it('applies check class when isCheck is true', () => {
     render(<Square {...baseProps} isCheck />);
     const square = screen.getByRole('button');
@@ -91,7 +91,7 @@ describe('Square', () => {
     expect(square.className).not.toContain('square--check');
   });
 
-  // 棋子渲染
+  // Piece rendering
   it('renders piece component when piece prop is provided', () => {
     render(<Square {...baseProps} piece="K" />);
     expect(screen.getByText('♔')).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe('Square', () => {
 
   it('does not render piece when piece prop is null', () => {
     const { container } = render(<Square {...baseProps} piece={null} />);
-    // Piece 组件渲染 span.piece，当 type 为 null 时返回 null
+    // Piece component renders span.piece, returns null when type is null
     const pieceSpans = container.querySelectorAll('.piece');
     expect(pieceSpans).toHaveLength(0);
   });
@@ -113,7 +113,7 @@ describe('Square', () => {
     expect(screen.getByTestId('child')).toBeInTheDocument();
   });
 
-  // 边缘情况：null/undefined children
+  // Edge case: null/undefined children
   it('renders with null children', () => {
     const { container } = render(<Square {...baseProps}>{null}</Square>);
     const square = screen.getByRole('button');
@@ -126,7 +126,7 @@ describe('Square', () => {
     expect(square).toBeInTheDocument();
   });
 
-  // 边缘情况：点击事件
+  // Edge case: click events
   it('calls onClick when clicked', () => {
     const onClick = vi.fn();
     render(<Square {...baseProps} onClick={onClick} />);
@@ -160,13 +160,13 @@ describe('Square', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  // 可访问性
+  // Accessibility
   it('has tabIndex 0 for keyboard navigation', () => {
     render(<Square {...baseProps} />);
     expect(screen.getByRole('button')).toHaveAttribute('tabindex', '0');
   });
 
-  // 边界情况：多个状态叠加
+  // Edge case: multiple states overlay
   it('applies multiple state classes simultaneously', () => {
     render(
       <Square
@@ -183,7 +183,7 @@ describe('Square', () => {
     expect(square.className).toContain('square--last-move');
   });
 
-  // 边界情况：isLegalMove + 吃子 + 选中
+  // Edge case: isLegalMove + capture + selected
   it('applies legal-capture with isSelected when both are true', () => {
     render(
       <Square

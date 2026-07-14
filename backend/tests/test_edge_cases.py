@@ -1,17 +1,17 @@
-"""额外的边缘情况测试合集 — 覆盖跨模块场景"""
+"""Additional edge case test collection — covers cross-module scenarios"""
 import pytest
 
 
 class TestPyprojectToml:
-    """验证 pyproject.toml 配置完整性"""
+    """Verify pyproject.toml configuration completeness"""
 
     def test_pyproject_toml_exists(self):
-        """基础功能：pyproject.toml 文件应存在"""
+        """Basic function: pyproject.toml file should exist"""
         import os
         assert os.path.exists("pyproject.toml")
 
     def test_dependencies_are_listed(self):
-        """基础功能：验证关键依赖在 pyproject.toml 中"""
+        """Basic function: verify key dependencies are in pyproject.toml"""
         import tomllib
         with open("pyproject.toml", "rb") as f:
             data = tomllib.load(f)
@@ -24,25 +24,25 @@ class TestPyprojectToml:
 
 
 class TestDirectoryStructure:
-    """验证项目目录结构完整性"""
+    """Verify project directory structure completeness"""
 
     def test_backend_directory_exists(self):
-        """基础功能：backend/ 目录应存在"""
+        """Basic function: backend/ directory should exist"""
         import os
         assert os.path.isdir(".")
 
     def test_app_directory_exists(self):
-        """基础功能：app/ 目录应存在"""
+        """Basic function: app/ directory should exist"""
         import os
         assert os.path.isdir("app")
 
     def test_routers_directory_exists(self):
-        """基础功能：app/routers/ 目录应存在"""
+        """Basic function: app/routers/ directory should exist"""
         import os
         assert os.path.isdir("app/routers")
 
     def test_all_python_files_exist(self):
-        """基础功能：所有要求的 Python 文件应存在"""
+        """Basic function: all required Python files should exist"""
         import os
         required_files = [
             "main.py",
@@ -54,4 +54,4 @@ class TestDirectoryStructure:
             "app/routers/games.py",
         ]
         for f in required_files:
-            assert os.path.isfile(f), f"缺少文件: {f}"
+            assert os.path.isfile(f), f"Missing file: {f}"

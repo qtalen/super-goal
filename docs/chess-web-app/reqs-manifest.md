@@ -1,38 +1,38 @@
-# 国际象棋 Web 应用 — 需求清单
+# Chess Web App — Requirements Manifest
 
 **Task Slug**: `chess-web-app`
-**技术栈**: React + TypeScript + Vite（前端） / Python + FastAPI + python-chess（后端）
-**数据持久化**: 无（纯内存）
-**联网对战**: 不需要
+**Tech Stack**: React + TypeScript + Vite (frontend) / Python + FastAPI + python-chess (backend)
+**Data Persistence**: None (in-memory only)
+**Online Play**: Not required
 
 ---
 
-## 需求列表（拓扑序）
+## Requirements List (Topological Order)
 
-| # | 需求 | 描述 | 依赖 | 状态 |
+| # | Requirement | Description | Depends On | Status |
 |---|------|------|------|------|
-| 1 | FastAPI 项目初始化 | 创建后端目录结构，配置依赖（fastapi, uvicorn, python-chess），基础应用骨架，入口文件 | — | passed |
-| 2 | 游戏会话管理 | 内存中管理多个游戏会话（创建/查询/删除），每个会话持有 python-chess Board 实例 + 难度设置 | 1 | passed |
-| 3 | AI 引擎 | 基于 Minimax + Alpha-Beta 剪枝算法，通过搜索深度区分初级(1-2层) / 中级(2-3层) / 高级(3-4层)三档难度 | 1 | passed |
-| 4 | REST API 端点 | `POST /games`、`GET /games/{id}`、`POST /games/{id}/move`（走子+AI应答）、获取合法走法等 | 2, 3 | passed |
-| 5 | React + Vite 项目初始化 | Vite + TypeScript + SCSS 项目搭建，组件目录结构，基础布局 | — | passed |
-| 6 | 棋盘 UI 组件 | 8×8 棋盘渲染，棋子 Unicode/CSS 显示，行列坐标标注，深浅格子交替 | 5 | passed |
-| 7 | 走子交互 | 点击棋子 → 高亮合法走法 → 点击目标格子走子；支持拖拽备选；吃子/升变等特殊走法 | 5, 6 | passed |
-| 8 | 游戏控制面板 | 难度选择（初/中/高）、回合指示、将军/将杀/和棋状态显示、新游戏/悔棋按钮 | 5 | passed |
-| 9 | API 客户端 + 状态管理 | 封装后端 API 调用，React Context + useReducer 管理全局游戏状态（棋盘、回合、状态） | 5, 4 | passed |
-| 10 | 前后端联调集成 | CORS 配置、Vite 代理设置、端到端全流程验证（创建→走子→AI应答→将军→将杀→一局完赛） | 4, 7, 8, 9 | passed |
+| 1 | FastAPI Project Init | Create backend directory structure, configure dependencies (fastapi, uvicorn, python-chess), basic app skeleton, entry file | — | passed |
+| 2 | Game Session Management | Manage multiple game sessions in memory (create/query/delete), each holding a python-chess Board instance + difficulty setting | 1 | passed |
+| 3 | AI Engine | Based on Minimax + Alpha-Beta pruning, distinguish 3 difficulty levels by search depth: Beginner (1-2 ply) / Intermediate (2-3 ply) / Advanced (3-4 ply) | 1 | passed |
+| 4 | REST API Endpoints | `POST /games`, `GET /games/{id}`, `POST /games/{id}/move` (player move + AI response), get legal moves, etc. | 2, 3 | passed |
+| 5 | React + Vite Project Init | Vite + TypeScript + SCSS project setup, component directory structure, basic layout | — | passed |
+| 6 | Board UI Components | 8×8 board rendering, piece Unicode/CSS display, row/column coordinate labels, alternating light/dark squares | 5 | passed |
+| 7 | Move Interaction | Click piece → highlight legal moves → click target square to move; drag-and-drop as alternative; capture/promotion special moves | 5, 6 | passed |
+| 8 | Game Control Panel | Difficulty selection (Beginner/Intermediate/Advanced), turn indicator, check/checkmate/stalemate/draw status display, new game/undo buttons | 5 | passed |
+| 9 | API Client + State Management | Encapsulate backend API calls, React Context + useReducer for global game state (board, turn, status) | 5, 4 | passed |
+| 10 | Frontend-Backend Integration | CORS config, Vite proxy settings, end-to-end full flow verification (create → move → AI response → check → checkmate → game over) | 4, 7, 8, 9 | passed |
 
-## 依赖关系图（拓扑序执行方向）
+## Dependency Graph (Topological Execution Direction)
 
 ```
-后端线：     1 ──→ 2 ──→ 4 ──────────────┐
-              └─→ 3 ──┘                  │
-                                          ├──→ 10（集成验证）
-前端线：     5 ──→ 6 ──→ 7 ──────────────┤
-              ├─→ 8 ─────────────────────┤
-              └─→ 9 ─────────────────────┘
+Backend:      1 ──→ 2 ──→ 4 ──────────────┐
+               └─→ 3 ──┘                  │
+                                           ├──→ 10 (Integration Verification)
+Frontend:     5 ──→ 6 ──→ 7 ──────────────┤
+               ├─→ 8 ─────────────────────┤
+               └─→ 9 ─────────────────────┘
 ```
 
 ---
 
-*需求清单于 2026-07-07 经用户确认锁定。*
+*Requirements manifest locked on 2026-07-07 after user confirmation.*

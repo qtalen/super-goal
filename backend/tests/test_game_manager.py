@@ -1,4 +1,4 @@
-"""GameManager 完整测试 — 覆盖正常路径、边界值和边缘情况"""
+"""GameManager full tests — covers happy path, boundary values, and edge cases"""
 import asyncio
 import pytest
 from app.game_manager import GameManager
@@ -7,7 +7,7 @@ import chess
 
 
 class TestGameManagerCreate:
-    """创建游戏的测试"""
+    """Tests for creating games"""
 
     async def _make_gm(self, max_games=100):
         gm = GameManager()
@@ -15,7 +15,7 @@ class TestGameManagerCreate:
         return gm
 
     async def test_create_game_success(self):
-        """正常路径：创建游戏返回有效的 GameSession"""
+        """Happy path: creating a game returns a valid GameSession"""
         gm = await self._make_gm()
         session = await gm.create_game(difficulty=2)
         assert isinstance(session, GameSession)
@@ -25,35 +25,35 @@ class TestGameManagerCreate:
         assert session.status == "playing"
         assert session.last_move is None
         assert session.created_at > 0
-        # 棋盘的初始 FEN
+        # Board initial FEN
         assert session.board.fen() == chess.STARTING_FEN
 
     async def test_create_game_difficulty_boundary_min(self):
-        """边界值：最小合法 difficulty 值（1）"""
+        """Boundary value: minimum valid difficulty value (1)"""
         gm = await self._make_gm()
         session = await gm.create_game(difficulty=1)
         assert session.difficulty == 1
 
     async def test_create_game_difficulty_boundary_max(self):
-        """边界值：最大合法 difficulty 值（3）"""
+        """Boundary value: maximum valid difficulty value (3)"""
         gm = await self._make_gm()
         session = await gm.create_game(difficulty=3)
         assert session.difficulty == 3
 
     async def test_create_game_difficulty_zero(self):
-        """边界值：difficulty=0（虽然是非法值，但仅存储，GameManager 应接受）"""
+        """Boundary value: difficulty=0 (although invalid, only stored; GameManager should accept)"""
         gm = await self._make_gm()
         session = await gm.create_game(difficulty=0)
         assert session.difficulty == 0
 
     async def test_create_game_difficulty_negative(self):
-        """边界值：difficulty=负数（GameManager 应存储，校验在路由层）"""
+        """Boundary value: negative difficulty (GameManager should store; validation is at router layer)"""
         gm = await self._make_gm()
         session = await gm.create_game(difficulty=-1)
         assert session.difficulty == -1
 
     async def test_create_game_unique_ids(self):
-        """正常路径：连续创建多个游戏，ID 应各不相同"""
+        """Happy path: creating multiple games should produce unique IDs"""
         gm = await self._make_gm()
         ids = set()
         for _ in range(10):
@@ -63,7 +63,7 @@ class TestGameManagerCreate:
         assert len(ids) == 10
 
     async def test_create_game_reach_max_limit(self):
-        """边缘情况：达到最大游戏数限制时抛出 ValueError"""
+        """Edge case: reaching max game limit raises ValueError"""
         gm = await self._make_gm(max_games=3)
         for _ in range(3):
             await gm.create_game(difficulty=1)
@@ -72,7 +72,7 @@ class TestGameManagerCreate:
             await gm.create_game(difficulty=1)
 
     async def test_create_game_after_delete_can_create_new(self):
-        """边缘情况：删除游戏后释放容量，可创建新游戏"""
+        """Edge case: after deleting a game, capacity is freed and new game can be created"""
         gm = await self._make_gm(max_games=2)
         s1 = await gm.create_game(difficulty=1)
         s2 = await gm.create_game(difficulty=1)
@@ -81,17 +81,17 @@ class TestGameManagerCreate:
             await gm.create_game(difficulty=1)
 
         await gm.delete_game(s1.game_id)
-        # 删除后应能继续创建
+        # After deletion, new game should be creatable
         s3 = await gm.create_game(difficulty=1)
         assert s3 is not None
         assert s3.game_id != s1.game_id
 
 
 class TestGameManagerGet:
-    """获取游戏的测试"""
+    """Tests for getting games"""
 
     async def test_get_game_exists(self):
-        """正常路径：获取已存在的游戏"""
+        """Happy path: get an existing game"""
         gm = GameManager()
         session = await gm.create_game(difficulty=2)
         fetched = await gm.get_game(session.game_id)
@@ -100,25 +100,25 @@ class TestGameManagerGet:
         assert fetched.difficulty == session.difficulty
 
     async def test_get_game_not_found(self):
-        """边缘情况：获取不存在的 game_id 返回 None"""
+        """Edge case: get non-existent game_id returns None"""
         gm = GameManager()
         result = await gm.get_game("nonexistent-id")
         assert result is None
 
     async def test_get_game_empty_string(self):
-        """边缘情况：game_id 为空字符串"""
+        """Edge case: empty string game_id"""
         gm = GameManager()
         result = await gm.get_game("")
         assert result is None
 
     async def test_get_game_special_chars(self):
-        """边缘情况：game_id 含特殊字符"""
+        """Edge case: game_id with special characters"""
         gm = GameManager()
         result = await gm.get_game("!@#$%^&*()_+")
         assert result is None
 
     async def test_get_game_after_deletion(self):
-        """边缘情况：删除后获取已删除的游戏返回 None"""
+        """Edge case: get deleted game returns None"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         await gm.delete_game(session.game_id)
@@ -127,29 +127,29 @@ class TestGameManagerGet:
 
 
 class TestGameManagerDelete:
-    """删除游戏的测试"""
+    """Tests for deleting games"""
 
     async def test_delete_game_exists(self):
-        """正常路径：删除存在的游戏返回 True"""
+        """Happy path: delete existing game returns True"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         result = await gm.delete_game(session.game_id)
         assert result is True
 
     async def test_delete_game_not_found(self):
-        """边缘情况：删除不存在的游戏返回 False"""
+        """Edge case: delete non-existent game returns False"""
         gm = GameManager()
         result = await gm.delete_game("nonexistent")
         assert result is False
 
     async def test_delete_game_empty_string(self):
-        """边缘情况：删除空字符串 game_id 返回 False"""
+        """Edge case: delete empty string game_id returns False"""
         gm = GameManager()
         result = await gm.delete_game("")
         assert result is False
 
     async def test_delete_game_removes_from_games(self):
-        """正常路径：删除后 _games 中不再包含该 ID"""
+        """Happy path: after deletion, _games no longer contains that ID"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         await gm.delete_game(session.game_id)
@@ -157,270 +157,269 @@ class TestGameManagerDelete:
 
 
 class TestGameManagerMakeMove:
-    """走子测试"""
+    """Tests for making moves"""
 
     async def test_make_move_valid(self):
-        """正常路径：合法走子 e2e4 应成功"""
+        """Happy path: legal move e2e4 should succeed"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         result = await gm.make_move(session.game_id, "e2", "e4")
         assert result.status != "playing" or result.status == "playing"
-        # 验证走法已执行：初始 e2 上的兵应已移动
+        # Verify the move was executed: pawn on e2 should have moved
         assert result.last_move == "e2e4"
-        # 白方走完，应轮到黑方
+        # After white moves, it should be black's turn
         assert result.board.turn == chess.BLACK
 
     async def test_make_move_illegal(self):
-        """边缘情况：非法走法（马走日到被阻挡位置）抛出 ValueError"""
+        """Edge case: illegal move (knight moving to blocked square) raises ValueError"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         with pytest.raises(ValueError, match="Illegal move"):
             await gm.make_move(session.game_id, "e2", "e5")
 
     async def test_make_move_wrong_turn(self):
-        """边缘情况：非白方回合（直接走黑方棋子）抛出 ValueError"""
+        """Edge case: moving when it's not white's turn (directly moving black pieces) raises ValueError"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 白方走一步
+        # White makes a move
         await gm.make_move(session.game_id, "e2", "e4")
-        # 再次走白方（现在应该是黑方回合）
+        # Try moving white again (should be black's turn now)
         with pytest.raises(ValueError, match="It's not your turn"):
             await gm.make_move(session.game_id, "d2", "d4")
 
     async def test_make_move_game_not_found(self):
-        """边缘情况：game_id 不存在抛出 ValueError"""
+        """Edge case: non-existent game_id raises ValueError"""
         gm = GameManager()
         with pytest.raises(ValueError, match="Game not found"):
             await gm.make_move("nonexistent", "e2", "e4")
 
     async def test_make_move_invalid_format(self):
-        """边缘情况：格子名格式错误抛出 ValueError"""
+        """Edge case: invalid square name format raises ValueError"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         with pytest.raises(ValueError, match="Invalid move format"):
             await gm.make_move(session.game_id, "e9", "e4")
 
     async def test_make_move_with_promotion(self):
-        """正常路径：升变走法（兵走到第8横排带 promotion 参数）"""
+        """Happy path: promotion move (pawn reaches 8th rank with promotion parameter)"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 构造一个兵快到升变线的局面
+        # Set up position with pawn about to promote
         board = chess.Board("8/4P3/8/8/8/8/8/8 w - - 0 1")
         session.board = board
 
         result = await gm.make_move(session.game_id, "e7", "e8", promotion="q")
         assert result.last_move == "e7e8q"
-        # 兵升变为后
+        # Pawn promoted to queen
         piece = result.board.piece_at(chess.E8)
         assert piece is not None
         assert piece.piece_type == chess.QUEEN
 
     async def test_make_move_game_over(self):
-        """边缘情况：游戏已结束时走子抛出 ValueError"""
+        """Edge case: moving when game is already over raises ValueError"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 构造一个将杀局面（黑方走棋，但已经被将杀）
+        # Set up a checkmate position (black to move, but already checkmated)
         session.board = chess.Board("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
         session.status = "checkmate"
 
-        # 游戏已结束，白方不能再走（而且现在是黑方轮到，但黑方被将杀）
+        # Game is over, white cannot move (also it's black's turn, but black is checkmated)
         with pytest.raises(ValueError, match="Game is already over"):
             await gm.make_move(session.game_id, "e8", "e7")
 
     async def test_make_move_updates_status_check(self):
-        """正常路径：走子后如果将军，status 应为 check"""
+        """Happy path: status should be check after a move that delivers check"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 构造局面：白车 a1，黑王 a8 + 黑车 c8
-        # 白方走 Ra1-a7 将军 a8 黑王
+        # Set up position: white rook a1, black king a8 + black rook c8
+        # White plays Ra1-a7 checking the black king on a8
         session.board = chess.Board("k1r5/8/8/8/8/8/8/R6K w - - 0 1")
         session.status = "playing"
         result = await gm.make_move(session.game_id, "a1", "a7")
         assert result.status == "check"
 
     async def test_make_move_checkmate_status(self):
-        """正常路径：将杀后 status 应为 checkmate"""
+        """Happy path: status should be checkmate after a checkmating move"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 经典 Scholar's mate 局面（Qxf7# 之前一步）
+        # Classic Scholar's mate position (one move before Qxf7#)
         session.board = chess.Board("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
         session.status = "playing"
-        # 黑方不管走什么，白方都 Qxf7#
-        # 但实际上这里黑方走，我们验证 status 已是 checkmate
+        # Black to move, verify it is already checkmate
         assert session.board.is_checkmate()
 
 
 class TestGameManagerGetLegalMoves:
-    """合法走法测试"""
+    """Tests for getting legal moves"""
 
     async def test_get_legal_moves_normal(self):
-        """正常路径：开局有 20 种合法走法"""
+        """Happy path: starting position has 20 legal moves"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         moves = await gm.get_legal_moves(session.game_id)
         assert isinstance(moves, list)
-        assert len(moves) == 20  # 初始局面白方有 20 种走法
-        # 验证格式为 UCI
+        assert len(moves) == 20  # Initial position: white has 20 legal moves
+        # Verify UCI format
         for move in moves:
             assert isinstance(move, str)
-            assert len(move) in (4, 5)  # 4 字符或 5 字符（升变）
+            assert len(move) in (4, 5)  # 4 characters or 5 (promotion)
 
     async def test_get_legal_moves_game_not_found(self):
-        """边缘情况：game_id 不存在抛出 ValueError"""
+        """Edge case: non-existent game_id raises ValueError"""
         gm = GameManager()
         with pytest.raises(ValueError, match="Game not found"):
             await gm.get_legal_moves("nonexistent")
 
     async def test_get_legal_moves_empty_string(self):
-        """边缘情况：空字符串 game_id 抛出 ValueError"""
+        """Edge case: empty string game_id raises ValueError"""
         gm = GameManager()
         with pytest.raises(ValueError, match="Game not found"):
             await gm.get_legal_moves("")
 
     async def test_get_legal_moves_after_move(self):
-        """正常路径：走子后合法走法列表发生变化"""
+        """Happy path: legal moves list changes after a move"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         moves_before = await gm.get_legal_moves(session.game_id)
         await gm.make_move(session.game_id, "e2", "e4")
         moves_after = await gm.get_legal_moves(session.game_id)
-        # 白方走了一步后，轮到黑方，黑方也有 20 种走法
+        # After white moves, it's black's turn, black also has 20 legal moves
         assert len(moves_after) == 20
-        # 白方走 e2e4 后，黑方走法应该与初始白方走法不同
+        # After white plays e2e4, black's legal moves should differ from initial white moves
         assert moves_before != moves_after
 
 
 class TestGameManagerUndo:
-    """悔棋测试"""
+    """Tests for undo functionality"""
 
     async def test_undo_two_moves(self):
-        """正常路径：悔棋撤回 AI 一步 + 玩家一步"""
+        """Happy path: undo undoes one AI move + one player move"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 玩家走 e2e4
+        # Player plays e2e4
         after_player = await gm.make_move(session.game_id, "e2", "e4")
-        # 模拟 AI 走（黑方走一步）
+        # Simulate AI move (black plays)
         after_player.board.push(chess.Move.from_uci("e7e5"))
 
-        # 悔棋
+        # Undo
         result = await gm.undo_last_two_moves(session.game_id)
-        # 应该退回到初始局面
+        # Should return to initial position
         assert result.board.fen() == chess.STARTING_FEN
         assert result.last_move is None
 
     async def test_undo_no_moves(self):
-        """边缘情况：没有走棋时悔棋，不应报错"""
+        """Edge case: undo with no moves should not error"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         result = await gm.undo_last_two_moves(session.game_id)
-        # 没有走棋，返回当前状态
+        # No moves, return current state
         assert result.board.fen() == chess.STARTING_FEN
 
     async def test_undo_one_move_only(self):
-        """边缘情况：只有一步走棋时，撤回一步"""
+        """Edge case: only one move, undo one step"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         await gm.make_move(session.game_id, "e2", "e4")
         result = await gm.undo_last_two_moves(session.game_id)
-        # 撤回一步，回到初始局面
+        # Undo one step, back to initial position
         assert result.board.fen() == chess.STARTING_FEN
         assert result.last_move is None
 
     async def test_undo_game_not_found(self):
-        """边缘情况：game_id 不存在抛出 ValueError"""
+        """Edge case: non-existent game_id raises ValueError"""
         gm = GameManager()
         with pytest.raises(ValueError, match="Game not found"):
             await gm.undo_last_two_moves("nonexistent")
 
     async def test_undo_restores_playing_status(self):
-        """正常路径：悔棋后状态恢复为 playing（从 checkmate/check 恢复）"""
+        """Happy path: undo restores status to playing (from checkmate/check)"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 模拟将杀后悔棋
-        # 使用 Scholar's mate 局面
+        # Simulate checkmate then undo
+        # Use Scholar's mate position
         session.board = chess.Board("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
         board_before = session.board.copy()
-        # 记录当前局面
+        # Record current position
         fen_before = session.board.fen()
 
-        # 先确认这不是初始局面
+        # Confirm this is not the initial position
         assert fen_before != chess.STARTING_FEN
 
-        # 悔棋两次
+        # Undo two moves
         result = await gm.undo_last_two_moves(session.game_id)
-        # 悔棋后应该回到 playing
+        # After undo should be playing
         assert result.status == "playing" or result.status == "check"
 
 
 class TestGameManagerDeriveStatus:
-    """游戏状态推导测试"""
+    """Tests for game status derivation"""
 
     def test_status_playing(self):
-        """正常路径：初始局面为 playing"""
+        """Happy path: initial position is playing"""
         gm = GameManager()
         board = chess.Board()
         assert gm._derive_status(board) == "playing"
 
     def test_status_check(self):
-        """正常路径：将军局面为 check"""
+        """Happy path: check position is check"""
         gm = GameManager()
-        # 白车在 a7 将军 a8 的黑王（黑方走棋，黑王被将军）
+        # White rook on a7 checks black king on a8 (black to move, black king in check)
         board = chess.Board("k7/R7/8/8/8/8/8/7K b - - 0 1")
         assert board.is_check()
         assert gm._derive_status(board) == "check"
 
-        # 白后在 e2 沿 e 线将军 e8 的黑王（黑方可逃往 d8）
+        # White queen on e2 checks black king on e8 along the e-file (black can escape to d8)
         board2 = chess.Board("4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1")
         assert board2.is_check()
         assert gm._derive_status(board2) == "check"
 
-        # 非将军局面
+        # Non-check position
         board3 = chess.Board()
         assert not board3.is_check()
         assert gm._derive_status(board3) == "playing"
 
     def test_status_checkmate(self):
-        """正常路径：将杀局面为 checkmate"""
+        """Happy path: checkmate position is checkmate"""
         gm = GameManager()
         board = chess.Board("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
         assert board.is_checkmate()
         assert gm._derive_status(board) == "checkmate"
 
     def test_status_stalemate(self):
-        """正常路径：逼和局面为 stalemate"""
+        """Happy path: stalemate position is stalemate"""
         gm = GameManager()
-        # 经典逼和局面
+        # Classic stalemate position
         board = chess.Board("k7/8/1Q6/8/8/8/8/7K b - - 0 1")
-        # 黑方无路可走但未被将军
+        # Black has no legal moves but is not in check
         assert board.is_stalemate()
         assert gm._derive_status(board) == "stalemate"
 
     def test_status_insufficient_material(self):
-        """正常路径：子力不足为 draw"""
+        """Happy path: insufficient material is draw"""
         gm = GameManager()
-        board = chess.Board("k7/8/8/8/8/8/8/K7 w - - 0 1")  # 只有双王
+        board = chess.Board("k7/8/8/8/8/8/8/K7 w - - 0 1")  # Only two kings
         assert board.is_insufficient_material()
         assert gm._derive_status(board) == "draw"
 
     def test_status_draw_by_claim(self):
-        """正常路径：可求和局面为 draw"""
+        """Happy path: claimable draw position is draw"""
         gm = GameManager()
-        # 三次重复局面（用 move_stack 模拟）
+        # Threefold repetition position (simulated via move_stack)
         board = chess.Board()
-        # 走几步形成重复
+        # Make moves to create repetition
         moves = ["g1f3", "g8f6", "f3g1", "f6g8", "g1f3", "g8f6", "f3g1", "f6g8"]
         for m in moves:
             board.push(chess.Move.from_uci(m))
-        # 连续走了几个来回，应该可以三次重复和棋
+        # After several back-and-forth moves, threefold repetition should be claimable
         assert board.can_claim_draw()
         assert gm._derive_status(board) == "draw"
 
 
 class TestGameManagerConcurrency:
-    """并发安全测试"""
+    """Concurrency safety tests"""
 
     async def test_concurrent_create_games(self):
-        """并发场景：同时创建多个游戏不应互相干扰"""
+        """Concurrency scenario: simultaneous game creation should not interfere with each other"""
         gm = GameManager()
         gm._max_games = 50
 
@@ -430,12 +429,12 @@ class TestGameManagerConcurrency:
         tasks = [create_one(i % 3 + 1) for i in range(30)]
         results = await asyncio.gather(*tasks)
         assert len(results) == 30
-        # 所有 ID 应唯一
+        # All IDs should be unique
         ids = [s.game_id for s in results]
         assert len(set(ids)) == 30
 
     async def test_concurrent_access_same_game(self):
-        """并发场景：同一游戏的走子应被 per-game 锁保护"""
+        """Concurrency scenario: moves on the same game should be protected by per-game lock"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
 
@@ -448,12 +447,12 @@ class TestGameManagerConcurrency:
 
         tasks = [make_bad_move() for _ in range(10)]
         results = await asyncio.gather(*tasks)
-        # 至少一个成功，其余要么失败（游戏结束）要么成功（但只有一个兵动）
+        # At least one succeeds, others either fail (game over) or succeed (but only one pawn moved)
         ok_count = results.count("ok")
         assert ok_count >= 1
 
     async def test_concurrent_different_games(self):
-        """并发场景：不同游戏的走子互不干扰"""
+        """Concurrency scenario: moves on different games do not interfere with each other"""
         gm = GameManager()
         s1 = await gm.create_game(difficulty=1)
         s2 = await gm.create_game(difficulty=2)
@@ -471,7 +470,7 @@ class TestGameManagerConcurrency:
         assert r2 == "d2d4"
 
     async def test_delete_while_creating(self):
-        """并发场景：删除和创建同一 ID 不会冲突"""
+        """Concurrency scenario: deleting and creating with same ID does not conflict"""
         gm = GameManager()
         s1 = await gm.create_game(difficulty=1)
         gid = s1.game_id
@@ -483,21 +482,21 @@ class TestGameManagerConcurrency:
             return await gm.get_game(gid)
 
         r1, r2 = await asyncio.gather(deleter(), getter())
-        # 删除和获取应安全返回
+        # Deletion and retrieval should return safely
         assert r1 is True or r1 is False
         assert r2 is None or r2 is not None
 
 
 class TestGameManagerSingleton:
-    """模块级单例测试"""
+    """Module-level singleton tests"""
 
     def test_singleton_is_game_manager_instance(self):
-        """正常路径：game_manager 是 GameManager 实例"""
+        """Happy path: game_manager is a GameManager instance"""
         from app.game_manager import game_manager
         assert isinstance(game_manager, GameManager)
 
     def test_singleton_methods_work(self):
-        """正常路径：单例的方法可以正常调用"""
+        """Happy path: singleton methods can be called normally"""
         from app.game_manager import game_manager
         session = asyncio.run(game_manager.create_game(difficulty=1))
         assert session is not None
@@ -505,58 +504,58 @@ class TestGameManagerSingleton:
 
 
 class TestGameManagerEdgeCases:
-    """更多边缘情况测试"""
+    """More edge case tests"""
 
     async def test_undo_after_game_over_restores_playing(self):
-        """边缘情况：游戏将杀后悔棋，恢复为 playing"""
+        """Edge case: undo after checkmate restores to playing"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 构造将杀局面
+        # Set up checkmate position
         session.board = chess.Board("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
         session.status = "checkmate"
         assert session.board.is_checkmate()
 
-        # 悔棋两步
+        # Undo two moves
         result = await gm.undo_last_two_moves(session.game_id)
-        # 状态不再是 checkmate
+        # Status is no longer checkmate
         assert result.status != "checkmate"
 
     async def test_make_move_invalid_promotion(self):
-        """边缘情况：升变参数不合法"""
+        """Edge case: invalid promotion parameter"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 兵到第8横排
+        # Pawn on 8th rank
         session.board = chess.Board("8/4P3/8/8/8/8/8/8 w - - 0 1")
-        # 合法升变但参数非法
+        # Legal promotion but invalid promotion piece
         with pytest.raises(ValueError, match="Invalid move format"):
             await gm.make_move(session.game_id, "e7", "e8", promotion="x")
 
     async def test_make_move_castling(self):
-        """边缘情况：王车易位走法"""
+        """Edge case: castling move"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 构造王车易位局面（白方短易位）
+        # Set up castling position (white kingside)
         board = chess.Board("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2")
         session.board = board
-        # 先走 g1f3
+        # Play g1f3
         session.board.push(chess.Move.from_uci("g1f3"))
-        # 黑方走
+        # Black plays
         session.board.push(chess.Move.from_uci("b8c6"))
-        # 走 f1b5
+        # Play f1b5
         session.board.push(chess.Move.from_uci("f1b5"))
-        # 黑方走
+        # Black plays
         session.board.push(chess.Move.from_uci("g8f6"))
-        # 现在白方可以短易位：o-o 即 e1g1
+        # Now white can castle kingside: o-o i.e. e1g1
         result = await gm.make_move(session.game_id, "e1", "g1")
         assert result.last_move == "e1g1"
-        # 王在 g1，车在 f1
+        # King on g1, rook on f1
         king = result.board.piece_at(chess.G1)
         rook = result.board.piece_at(chess.F1)
         assert king is not None and king.piece_type == chess.KING
         assert rook is not None and rook.piece_type == chess.ROOK
 
     async def test_get_legal_moves_after_checkmate(self):
-        """边缘情况：将杀后合法走法列表为空"""
+        """Edge case: legal moves list is empty after checkmate"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         session.board = chess.Board("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
@@ -565,7 +564,7 @@ class TestGameManagerEdgeCases:
         assert len(moves) == 0
 
     async def test_create_game_sets_correct_defaults(self):
-        """正常路径：检查默认值"""
+        """Happy path: check default values"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
         assert session.status == "playing"
@@ -574,10 +573,10 @@ class TestGameManagerEdgeCases:
         assert session.board.fen() == chess.STARTING_FEN
 
     async def test_delete_game_also_clears_game_lock(self):
-        """正常路径：删除游戏时对应 per-game 锁也被清理"""
+        """Happy path: deleting a game also cleans up the corresponding per-game lock"""
         gm = GameManager()
         session = await gm.create_game(difficulty=1)
-        # 获取锁使锁字典中存在
+        # Acquire lock so it exists in the lock dict
         await gm.get_game_lock(session.game_id)
         assert session.game_id in gm._game_locks
         await gm.delete_game(session.game_id)

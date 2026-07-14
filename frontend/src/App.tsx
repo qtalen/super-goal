@@ -10,7 +10,7 @@ import PromotionDialog from './components/PromotionDialog';
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 /**
- * 根据 chess.js 实例推导游戏状态
+ * Derive game status from chess.js instance
  */
 function deriveStatus(chess: Chess): string {
   if (chess.isCheckmate()) return 'checkmate';
@@ -21,7 +21,7 @@ function deriveStatus(chess: Chess): string {
 }
 
 /**
- * 查找当前走子方的王所在格子
+ * Find the king square of the current player
  */
 function findKingSquare(chess: Chess): Square | null {
   const turn = chess.turn();
@@ -37,7 +37,7 @@ function findKingSquare(chess: Chess): Square | null {
 }
 
 /**
- * 从 FEN 推导回合
+ * Derive turn from FEN
  */
 function fenTurn(fen: string): 'w' | 'b' {
   return fen.split(' ')[1] === 'b' ? 'b' : 'w';
@@ -46,13 +46,13 @@ function fenTurn(fen: string): 'w' | 'b' {
 function App() {
   const { state, dispatch } = useGame();
 
-  // 升变对话框状态
+  // Promotion dialog state
   const [pendingPromotion, setPendingPromotion] = useState<{
     from: Square;
     to: Square;
   } | null>(null);
 
-  // 根据当前棋局派生被将军格子
+  // Derive check square from current position
   const checkSquare = useMemo(() => {
     if (state.status !== 'check') return null;
     try {
@@ -63,7 +63,7 @@ function App() {
     }
   }, [state.fen, state.status]);
 
-  // 根据当前选中格派生合法走法目标（用于高亮显示）
+  // Derive legal move targets from selected square (for highlighting)
   const displayLegalMoves = useMemo(() => {
     if (!state.selectedSquare) return [];
     try {
@@ -75,11 +75,11 @@ function App() {
     }
   }, [state.fen, state.selectedSquare]);
 
-  // 页面加载时自动创建一局新游戏（进入 API 模式，激活 AI）
-  // 测试环境中跳过（vitest 环境下 chessApi 被 mock，自动创建无意义）
+  // Auto-create a new game on page load (enter API mode, activate AI)
+  // Skip in test environment (chessApi is mocked in vitest, auto-creation is meaningless)
   const autoStartRef = useRef(false);
   useEffect(() => {
-    if (import.meta.env.MODE === 'test') return; // 测试环境跳过（mock 无后端）
+    if (import.meta.env.MODE === 'test') return; // Skip in test environment (mock has no backend)
     if (!autoStartRef.current) {
       autoStartRef.current = true;
       dispatch({ type: 'SET_THINKING', payload: true });
@@ -90,13 +90,13 @@ function App() {
   }, []);
 
   /**
-   * 执行走子（本地模式走 chess.js，API 模式调用后端）
+   * Execute a move (local mode uses chess.js, API mode calls backend)
    */
   const executeMove = useCallback(
     (from: Square, to: Square, promotion?: string) => {
       if (state.gameId) {
-        // ── API 模式 ──────────────────────────────────────────────
-        // 1. 立即显示玩家走子（本地走，不更新历史）
+        // ── API mode ──────────────────────────────────────────────
+        // 1. Immediately show player's move (local move, don't update history)
         try {
           const chess = new Chess(state.fen);
           chess.move({ from, to, promotion } as { from: Square; to: Square; promotion?: string });
@@ -117,7 +117,7 @@ function App() {
           return;
         }
 
-        // 2. 异步请求 AI 应答
+        // 2. Request AI response asynchronously
         setPendingPromotion(null);
         chessApi
           .makeMove(state.gameId, from, to, promotion)
@@ -128,7 +128,7 @@ function App() {
             dispatch({ type: 'SET_ERROR', payload: err.message });
           });
       } else {
-        // ── 本地模式 ──────────────────────────────────────────────
+        // ── Local mode ──────────────────────────────────────────────
         try {
           const chess = new Chess(state.fen);
           chess.move({ from, to, promotion } as { from: Square; to: Square; promotion?: string });
@@ -157,7 +157,7 @@ function App() {
   );
 
   /**
-   * 处理格子点击
+   * Handle square click
    */
   const handleSquareClick = useCallback(
     (square: string) => {
@@ -167,30 +167,30 @@ function App() {
       const chess = new Chess(state.fen);
       const piece = chess.get(sq);
 
-      // Case 1: 无选中 + 点击己方棋子 → 选中
+      // Case 1: No selection + click own piece → select
       if (!state.selectedSquare && piece && piece.color === state.turn) {
         dispatch({ type: 'SELECT_SQUARE', payload: square });
         return;
       }
 
-      // Case 2: 有选中 + 点击同一格子 → 取消选中
+      // Case 2: Has selection + click same square → deselect
       if (state.selectedSquare === square) {
         dispatch({ type: 'SELECT_SQUARE', payload: null });
         return;
       }
 
-      // Case 3: 有选中 + 点击另一个己方棋子 → 切换选中
+      // Case 3: Has selection + click another own piece → switch selection
       if (state.selectedSquare && piece && piece.color === state.turn) {
         dispatch({ type: 'SELECT_SQUARE', payload: square });
         return;
       }
 
-      // Case 4: 有选中 + 点击目标格子 → 尝试走子
+      // Case 4: Has selection + click target square → attempt move
       if (state.selectedSquare) {
         const from = state.selectedSquare as Square;
         const to = sq;
 
-        // 检测升变条件：兵到达第 1 或第 8 横排
+        // Check promotion condition: pawn reaches rank 1 or rank 8
         const pieceType = chess.get(from);
         if (pieceType && pieceType.type === 'p') {
           const rank = square.charAt(1);
@@ -207,7 +207,7 @@ function App() {
   );
 
   /**
-   * 处理升变选择
+   * Handle promotion selection
    */
   const handlePromotion = useCallback(
     (piece: 'q' | 'r' | 'b' | 'n') => {
@@ -219,7 +219,7 @@ function App() {
   );
 
   /**
-   * 取消升变
+   * Cancel promotion
    */
   const cancelPromotion = useCallback(() => {
     setPendingPromotion(null);
@@ -227,7 +227,7 @@ function App() {
   }, [dispatch]);
 
   /**
-   * 新游戏：通过 API 创建
+   * New game: create via API
    */
   const handleNewGame = useCallback(
     (difficulty: 1 | 2 | 3) => {
@@ -245,7 +245,7 @@ function App() {
   );
 
   /**
-   * 悔棋：从 history 回溯两步
+   * Undo: rewind history by two steps
    */
   const handleUndo = useCallback(() => {
     if (state.history.length < 2) return;

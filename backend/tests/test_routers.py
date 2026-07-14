@@ -1,6 +1,6 @@
-"""REST API 端点集成测试 — 覆盖所有端点和边缘情况
+"""REST API endpoint integration tests — covers all endpoints and edge cases
 
-使用 httpx.AsyncClient 通过 ASGI 传输层直接测试 FastAPI 应用。
+Uses httpx.AsyncClient via ASGI transport to directly test the FastAPI app.
 """
 import pytest
 import chess
@@ -10,31 +10,31 @@ from app.game_manager import game_manager
 
 
 # =============================================================================
-# 辅助函数
+# Helper Functions
 # =============================================================================
 
 @pytest.fixture(autouse=True)
 async def reset_game_manager():
-    """每个测试前清理游戏管理器状态，避免测试间互相干扰"""
+    """Clean up game manager state before each test to avoid cross-test interference"""
     game_manager._games.clear()
     game_manager._game_locks.clear()
     yield
 
 
 def _game_manager():
-    """返回游戏管理器单例的引用"""
+    """Return reference to the game manager singleton"""
     return game_manager
 
 
 # =============================================================================
-# POST /api/games — 创建游戏
+# POST /api/games — Create Game
 # =============================================================================
 
 class TestCreateGame:
-    """POST /api/games 创建游戏端点测试"""
+    """POST /api/games create game endpoint tests"""
 
     async def test_create_game_success(self, async_client):
-        """正常路径：创建游戏返回 201 和 GameStateResponse"""
+        """Happy path: creating a game returns 201 with GameStateResponse"""
         resp = await async_client.post("/api/games", json={"difficulty": 2})
         assert resp.status_code == 201
         data = resp.json()
@@ -44,55 +44,55 @@ class TestCreateGame:
         assert data["fen"] == chess.STARTING_FEN
         assert data["turn"] == "w"
         assert data["last_move"] is None
-        assert len(data["legal_moves"]) == 20  # 初始局面 20 种走法
+        assert len(data["legal_moves"]) == 20  # Initial position has 20 legal moves
 
     async def test_create_game_difficulty_1(self, async_client):
-        """边界值：最小合法难度 1"""
+        """Boundary value: minimum valid difficulty 1"""
         resp = await async_client.post("/api/games", json={"difficulty": 1})
         assert resp.status_code == 201
         assert resp.json()["difficulty"] == 1
 
     async def test_create_game_difficulty_3(self, async_client):
-        """边界值：最大合法难度 3"""
+        """Boundary value: maximum valid difficulty 3"""
         resp = await async_client.post("/api/games", json={"difficulty": 3})
         assert resp.status_code == 201
         assert resp.json()["difficulty"] == 3
 
     async def test_create_game_difficulty_0_invalid(self, async_client):
-        """边界值：difficulty=0 小于最小值，返回 422"""
+        """Boundary value: difficulty=0 below minimum, returns 422"""
         resp = await async_client.post("/api/games", json={"difficulty": 0})
         assert resp.status_code == 422
 
     async def test_create_game_difficulty_4_invalid(self, async_client):
-        """边界值：difficulty=4 大于最大值，返回 422"""
+        """Boundary value: difficulty=4 above maximum, returns 422"""
         resp = await async_client.post("/api/games", json={"difficulty": 4})
         assert resp.status_code == 422
 
     async def test_create_game_difficulty_negative(self, async_client):
-        """边界值：负数难度返回 422"""
+        """Boundary value: negative difficulty returns 422"""
         resp = await async_client.post("/api/games", json={"difficulty": -1})
         assert resp.status_code == 422
 
     async def test_create_game_missing_difficulty(self, async_client):
-        """异常输入：缺少 difficulty 字段返回 422"""
+        """Error input: missing difficulty field returns 422"""
         resp = await async_client.post("/api/games", json={})
         assert resp.status_code == 422
 
     async def test_create_game_invalid_json(self, async_client):
-        """异常输入：非 JSON 请求体返回 422 或 415"""
+        """Error input: non-JSON body returns 422 or 415"""
         resp = await async_client.post("/api/games", content="not-json", headers={"Content-Type": "application/json"})
         assert resp.status_code == 422
 
 
 # =============================================================================
-# GET /api/games/{game_id} — 获取游戏状态
+# GET /api/games/{game_id} — Get Game State
 # =============================================================================
 
 class TestGetGame:
-    """GET /api/games/{game_id} 获取游戏状态端点测试"""
+    """GET /api/games/{game_id} get game state endpoint tests"""
 
     async def test_get_game_success(self, async_client):
-        """正常路径：获取已存在的游戏返回 200"""
+        """Happy path: get existing game returns 200"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 2})
         game_id = create_resp.json()["game_id"]
 
@@ -107,26 +107,26 @@ class TestGetGame:
         assert data["last_move"] is None
 
     async def test_get_game_not_found(self, async_client):
-        """边缘情况：不存在的 game_id 返回 404"""
+        """Edge case: non-existent game_id returns 404"""
         resp = await async_client.get("/api/games/nonexistent-id")
         assert resp.status_code == 404
         assert resp.json()["detail"] == "Game not found"
 
     async def test_get_game_empty_id(self, async_client):
-        """边缘情况：空字符串 game_id 返回 404"""
+        """Edge case: empty string game_id returns 404"""
         resp = await async_client.get("/api/games/")
-        # 空路径可能匹配到根路径，但不影响测试
-        # 实际测试空 ID
+        # Empty path may match root path, doesn't affect the test
+        # Actually test empty ID
         resp2 = await async_client.get("/api/games/ ")
         assert resp2.status_code == 404
 
     async def test_get_game_special_chars(self, async_client):
-        """边缘情况：含特殊字符的 game_id 返回 404"""
+        """Edge case: game_id with special characters returns 404"""
         resp = await async_client.get("/api/games/!@#$%")
         assert resp.status_code == 404
 
     async def test_get_game_after_create_has_legal_moves(self, async_client):
-        """正常路径：获取的游戏包含合法走法列表"""
+        """Happy path: retrieved game contains legal moves list"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 2})
         game_id = create_resp.json()["game_id"]
 
@@ -134,21 +134,21 @@ class TestGetGame:
         data = resp.json()
         assert "legal_moves" in data
         assert len(data["legal_moves"]) > 0
-        # 验证 UCI 格式
+        # Verify UCI format
         for move in data["legal_moves"]:
             assert isinstance(move, str)
             assert 4 <= len(move) <= 5
 
 
 # =============================================================================
-# POST /api/games/{game_id}/move — 走子
+# POST /api/games/{game_id}/move — Make Move
 # =============================================================================
 
 class TestMakeMove:
-    """POST /api/games/{game_id}/move 走子端点测试"""
+    """POST /api/games/{game_id}/move make move endpoint tests"""
 
     async def test_make_move_success(self, async_client):
-        """正常路径：合法走子返回 200 并包含 AI 走法"""
+        """Happy path: legal move returns 200 with AI move included"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
@@ -159,17 +159,17 @@ class TestMakeMove:
         assert resp.status_code == 200
         data = resp.json()
         assert data["game_id"] == game_id
-        # last_move 是棋盘上最后一步走法（AI 走子后为 AI 的走法）
+        # last_move is the latest move on the board (AI's move after it plays)
         assert data["last_move"] == data["ai_move"]
         assert data["ai_move"] is not None
         assert isinstance(data["ai_move"], str)
         assert len(data["ai_move"]) in (4, 5)
-        assert data["turn"] == "w"  # AI 走后回到白方
+        assert data["turn"] == "w"  # Back to white after AI moves
         assert data["status"] in ("playing", "check")
         assert data["difficulty"] == 1
 
     async def test_make_move_and_verify_board_change(self, async_client):
-        """正常路径：走子后 FEN 应变化，legal_moves 更新"""
+        """Happy path: FEN should change after move, legal_moves updated"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
         initial_fen = create_resp.json()["fen"]
@@ -183,7 +183,7 @@ class TestMakeMove:
         assert len(data["legal_moves"]) > 0
 
     async def test_make_move_game_not_found(self, async_client):
-        """边缘情况：不存在的 game_id 返回 404"""
+        """Edge case: non-existent game_id returns 404"""
         resp = await async_client.post(
             "/api/games/nonexistent/move",
             json={"from_sq": "e2", "to_sq": "e4"},
@@ -191,7 +191,7 @@ class TestMakeMove:
         assert resp.status_code == 404
 
     async def test_make_move_illegal(self, async_client):
-        """边缘情况：非法走子（马走日到被阻挡位置）返回 400"""
+        """Edge case: illegal move (knight moving to blocked square) returns 400"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
@@ -203,11 +203,11 @@ class TestMakeMove:
         assert "Illegal move" in resp.json()["detail"]
 
     async def test_make_move_invalid_format(self, async_client):
-        """异常输入：格子名格式错误返回 400"""
+        """Error input: invalid square name returns 400"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
-        # from_sq 不合法
+        # Invalid from_sq
         resp = await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "e9", "to_sq": "e4"},
@@ -215,11 +215,11 @@ class TestMakeMove:
         assert resp.status_code in (400, 422)
 
     async def test_make_move_game_over_checkmate(self, async_client):
-        """边缘情况：将杀状态走子返回 400"""
+        """Edge case: moving when checkmate returns 400"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
-        # 用 game_manager 直接设置将杀局面
+        # Directly set checkmate position via game_manager
         session = await game_manager.get_game(game_id)
         session.board = chess.Board(
             "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4"
@@ -234,11 +234,11 @@ class TestMakeMove:
         assert resp.json()["detail"] == "Game is already over"
 
     async def test_make_move_game_over_stalemate(self, async_client):
-        """边缘情况：逼和状态走子返回 400"""
+        """Edge case: moving when stalemate returns 400"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
-        # 用 game_manager 直接设置逼和局面
+        # Directly set stalemate position via game_manager
         session = await game_manager.get_game(game_id)
         session.board = chess.Board("k7/8/1Q6/8/8/8/8/7K b - - 0 1")
         session.status = "stalemate"
@@ -251,17 +251,17 @@ class TestMakeMove:
         assert resp.json()["detail"] == "Game is already over"
 
     async def test_make_move_wrong_turn(self, async_client):
-        """边缘情况：非白方回合走子返回 400"""
+        """Edge case: moving when it's not white's turn returns 400"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
-        # 用 game_manager 直接设置黑方回合
+        # Directly set black's turn via game_manager
         session = await game_manager.get_game(game_id)
         session.board = chess.Board(
             "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
-        )  # e2e4 后的局面，黑方走
+        )  # Position after e2e4, black to move
         session.status = "playing"
-        # 同步更新 last_move 以保持一致性
+        # Sync last_move for consistency
         session.last_move = "e2e4"
 
         resp = await async_client.post(
@@ -272,11 +272,11 @@ class TestMakeMove:
         assert "turn" in resp.json()["detail"].lower()
 
     async def test_make_move_with_promotion(self, async_client):
-        """正常路径：带升变的走子"""
+        """Happy path: move with promotion"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
-        # 用 game_manager 设置兵到第 7 横排的局面
+        # Set up position with pawn on 7th rank via game_manager
         session = await game_manager.get_game(game_id)
         session.board = chess.Board("8/4P3/8/8/8/8/8/8 w - - 0 1")
         session.status = "playing"
@@ -288,11 +288,11 @@ class TestMakeMove:
         assert resp.status_code == 200
         data = resp.json()
         assert data["last_move"] == "e7e8q"
-        # 验证升变为后
+        # Verify promoted to queen
         assert "q" in data["last_move"]
 
     async def test_make_move_invalid_promotion(self, async_client):
-        """异常输入：不合法的升变参数返回错误"""
+        """Error input: invalid promotion parameter returns error"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
@@ -300,7 +300,7 @@ class TestMakeMove:
         session.board = chess.Board("8/4P3/8/8/8/8/8/8 w - - 0 1")
         session.status = "playing"
 
-        # promotion 不是合法棋子
+        # Promotion piece is not a valid chess piece
         resp = await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "e7", "to_sq": "e8", "promotion": "x"},
@@ -308,18 +308,18 @@ class TestMakeMove:
         assert resp.status_code == 400
 
     async def test_make_move_invalid_from_sq_format(self, async_client):
-        """异常输入：from_sq 长度不符合 Pydantic 校验返回 422"""
+        """Error input: from_sq length fails Pydantic validation, returns 422"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
         resp = await async_client.post(
             f"/api/games/{game_id}/move",
-            json={"from_sq": "e", "to_sq": "e4"},  # from_sq 只有 1 字符
+            json={"from_sq": "e", "to_sq": "e4"},  # from_sq only 1 character
         )
         assert resp.status_code == 422
 
     async def test_make_move_too_long_sq(self, async_client):
-        """异常输入：格子名超过 2 字符返回 422"""
+        """Error input: square name exceeds 2 characters, returns 422"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
@@ -331,14 +331,14 @@ class TestMakeMove:
 
 
 # =============================================================================
-# GET /api/games/{game_id}/legal-moves — 合法走法
+# GET /api/games/{game_id}/legal-moves — Legal Moves
 # =============================================================================
 
 class TestLegalMoves:
-    """GET /api/games/{game_id}/legal-moves 端点测试"""
+    """GET /api/games/{game_id}/legal-moves endpoint tests"""
 
     async def test_legal_moves_success(self, async_client):
-        """正常路径：获取初始局面的合法走法"""
+        """Happy path: get legal moves for initial position"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 2})
         game_id = create_resp.json()["game_id"]
 
@@ -349,32 +349,32 @@ class TestLegalMoves:
         assert len(data["legal_moves"]) == 20
 
     async def test_legal_moves_not_found(self, async_client):
-        """边缘情况：不存在的 game_id 返回 404"""
+        """Edge case: non-existent game_id returns 404"""
         resp = await async_client.get("/api/games/nonexistent/legal-moves")
         assert resp.status_code == 404
 
     async def test_legal_moves_after_move(self, async_client):
-        """正常路径：走子后合法走法列表变化"""
+        """Happy path: legal moves list changes after a move"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
-        # 走子前
+        # Before move
         resp_before = await async_client.get(f"/api/games/{game_id}/legal-moves")
         moves_before = resp_before.json()["legal_moves"]
 
-        # 走子
+        # Make move
         await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "e2", "to_sq": "e4"},
         )
 
-        # 走子后（黑方回合，AI 已走）
+        # After move (black's turn, AI already moved)
         resp_after = await async_client.get(f"/api/games/{game_id}/legal-moves")
         moves_after = resp_after.json()["legal_moves"]
         assert moves_after != moves_before
 
     async def test_legal_moves_empty_after_checkmate(self, async_client):
-        """边缘情况：将杀后合法走法列表为空"""
+        """Edge case: legal moves list is empty after checkmate"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
@@ -390,20 +390,20 @@ class TestLegalMoves:
 
 
 # =============================================================================
-# 完整对局流程测试
+# Complete Game Flow Tests
 # =============================================================================
 
 class TestCompleteGameFlow:
-    """多步走子流程测试"""
+    """Multi-move game flow tests"""
 
     async def test_two_moves_flow(self, async_client):
-        """正常路径：创建游戏 → 走子 → AI 应答 → 再走子 → 再应答"""
-        # Step 1: 创建游戏
+        """Happy path: create game → move → AI response → move again → response again"""
+        # Step 1: Create game
         resp = await async_client.post("/api/games", json={"difficulty": 1})
         assert resp.status_code == 201
         game_id = resp.json()["game_id"]
 
-        # Step 2: 第一次走子
+        # Step 2: First move
         resp1 = await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "e2", "to_sq": "e4"},
@@ -411,10 +411,10 @@ class TestCompleteGameFlow:
         assert resp1.status_code == 200
         data1 = resp1.json()
         assert data1["ai_move"] is not None
-        assert data1["turn"] == "w"  # AI 走后回到白方回合
+        assert data1["turn"] == "w"  # Back to white after AI moves
         first_fen = data1["fen"]
 
-        # Step 3: 第二次走子
+        # Step 3: Second move
         resp2 = await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "d2", "to_sq": "d4"},
@@ -425,11 +425,11 @@ class TestCompleteGameFlow:
         assert data2["fen"] != first_fen
         assert data2["turn"] == "w"
 
-        # Step 4: 校验游戏仍在进行
+        # Step 4: Verify game is still in progress
         assert data2["status"] in ("playing", "check")
 
     async def test_three_moves_game_in_progress(self, async_client):
-        """正常路径：三步走子后游戏状态仍为 playing 或 check"""
+        """Happy path: after three moves game status is still playing or check"""
         resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = resp.json()["game_id"]
 
@@ -441,7 +441,7 @@ class TestCompleteGameFlow:
             )
             assert resp.status_code == 200
 
-        # 最终状态检查
+        # Final state check
         final = await async_client.get(f"/api/games/{game_id}")
         assert final.status_code == 200
         data = final.json()
@@ -449,7 +449,7 @@ class TestCompleteGameFlow:
         assert len(data["legal_moves"]) > 0
 
     async def test_move_history_preserved(self, async_client):
-        """正常路径：多次走子后 last_move 为 AI 走法（最新走法），且两次不同"""
+        """Happy path: last_move is AI's move (latest move) after multiple moves, and differs between moves"""
         resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = resp.json()["game_id"]
 
@@ -457,7 +457,7 @@ class TestCompleteGameFlow:
             f"/api/games/{game_id}/move",
             json={"from_sq": "e2", "to_sq": "e4"},
         )
-        # last_move 是 AI 走子后最新的走法 = ai_move
+        # last_move is the latest move after AI plays = ai_move
         first_ai = resp1.json()["ai_move"]
         assert resp1.json()["last_move"] == first_ai
 
@@ -465,24 +465,24 @@ class TestCompleteGameFlow:
             f"/api/games/{game_id}/move",
             json={"from_sq": "d2", "to_sq": "d4"},
         )
-        # 第二次走子的 last_move 不同于第一次（AI 新走法）
+        # Second move's last_move differs from the first (new AI move)
         second_ai = resp2.json()["ai_move"]
         assert resp2.json()["last_move"] == second_ai
         assert first_ai != second_ai
 
     async def test_move_status_consistency(self, async_client):
-        """正常路径：走子后 GET 和 POST 返回的状态一致"""
+        """Happy path: GET and POST return consistent state after a move"""
         resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = resp.json()["game_id"]
 
-        # 走子
+        # Make move
         move_resp = await async_client.post(
             f"/api/games/{game_id}/move",
             json={"from_sq": "e2", "to_sq": "e4"},
         )
         move_data = move_resp.json()
 
-        # GET 验证
+        # Verify via GET
         get_resp = await async_client.get(f"/api/games/{game_id}")
         get_data = get_resp.json()
 
@@ -492,19 +492,19 @@ class TestCompleteGameFlow:
 
 
 # =============================================================================
-# 将杀场景测试
+# Checkmate Scenario Tests
 # =============================================================================
 
 class TestCheckmateViaAPI:
-    """通过 API 走子达成将杀的测试"""
+    """Tests for achieving checkmate via API moves"""
 
     async def test_player_delivers_checkmate_ai_stops(self, async_client):
-        """边缘情况：玩家走将杀后 AI 不走子，ai_move 为 None"""
+        """Edge case: after player delivers checkmate, AI does not move, ai_move is None"""
         create_resp = await async_client.post("/api/games", json={"difficulty": 1})
         game_id = create_resp.json()["game_id"]
 
-        # 设置 Scholar's Mate 前一步的局面：白后 h5，白象 c4，黑王 e8
-        # 白方走 Qh5-f7#（后吃 f7 兵将军，象保护后不被黑王吃）
+        # Set up position one move before Scholar's Mate: white queen h5, bishop c4, black king e8
+        # White plays Qh5-f7# (queen captures f7 pawn with check, bishop protects queen from black king)
         session = await game_manager.get_game(game_id)
         session.board = chess.Board(
             "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 4"
@@ -518,35 +518,35 @@ class TestCheckmateViaAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "checkmate"
-        assert data["ai_move"] is None  # 将杀后 AI 不应走子
-        assert data["turn"] == "b"  # 黑方回合，但已被将杀
+        assert data["ai_move"] is None  # AI should not move after checkmate
+        assert data["turn"] == "b"  # Black's turn, but checkmated
 
 
 # =============================================================================
-# Pydantic 校验 — Swagger 兼容性
+# Pydantic Validation — Swagger Compatibility
 # =============================================================================
 
 class TestPydanticModels:
-    """Pydantic 模型校验测试"""
+    """Pydantic model validation tests"""
 
     async def test_create_game_request_validates_ge(self, async_client):
-        """Pydantic 校验：difficulty 小于 1 自动拒绝"""
+        """Pydantic validation: difficulty < 1 is auto-rejected"""
         resp = await async_client.post("/api/games", json={"difficulty": 0})
         assert resp.status_code == 422
 
     async def test_create_game_request_validates_le(self, async_client):
-        """Pydantic 校验：difficulty 大于 3 自动拒绝"""
+        """Pydantic validation: difficulty > 3 is auto-rejected"""
         resp = await async_client.post("/api/games", json={"difficulty": 4})
         assert resp.status_code == 422
 
     async def test_move_request_from_sq_min_length(self, async_client):
-        """Pydantic 校验：from_sq 太短（Pydantic 在路由前校验，返回 422）"""
+        """Pydantic validation: from_sq too short (Pydantic validates before router, returns 422)"""
         resp = await async_client.post("/api/games/any/move", json={"from_sq": "e", "to_sq": "e4"})
-        # Pydantic 校验在路由处理器之前执行，所以返回 422 而非 404
+        # Pydantic validation runs before the route handler, so returns 422 not 404
         assert resp.status_code == 422
 
     async def test_swagger_schema_generates(self, async_client):
-        """Swagger：OpenAPI schema 应正常生成"""
+        """Swagger: OpenAPI schema should generate correctly"""
         resp = await async_client.get("/openapi.json")
         assert resp.status_code == 200
         schema = resp.json()

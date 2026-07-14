@@ -1,19 +1,19 @@
 ---
 agent: goal-orch
-description: 循环式开发 — 需求拆解 → 架构规划 → 逐个实现 → 验证 → 报告
+description: Cyclic development — requirement decomposition → architecture planning → per-item implementation → verification → report
 ---
 
-## Plan Mode 关卡
+## Plan Mode Gate
 
-检测系统提示：如果包含 "Plan Mode ACTIVE" 或 "READ-ONLY"：
+Detect system prompt: if it contains "Plan Mode ACTIVE" or "READ-ONLY":
 
-- **允许**：STEP 1 全部（需求拆解、澄清、写 reqs-manifest.md、展示确认）
-- **禁止**：STEP 2 及之后（委派 goal-worker、运行 lint/test 等有副作用的 bash）
+- **Allowed**: ALL of STEP 1 (requirement decomposition, clarification, writing reqs-manifest.md, presenting for confirmation)
+- **Forbidden**: STEP 2 and beyond (delegating goal-worker, running lint/test and other bash with side effects)
 
-STEP 1 完成后告知用户，等用户确认退出 Plan Mode 后才能继续 STEP 2。
+After STEP 1 is complete, inform the user. Wait for the user to confirm exiting Plan Mode before proceeding to STEP 2.
 
 ---
 
-用户需求：$ARGUMENTS
+User requirements: $ARGUMENTS
 
-严格按照 goal-orch 工作流处理，不得跳过任何步骤。
+Strictly follow the goal-orch workflow, do not skip any steps.

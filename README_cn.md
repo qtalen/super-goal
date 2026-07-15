@@ -4,6 +4,8 @@
 
 以`test/`开头的几个分支是我在OpenCode下使用`/goal`命令做的测试。
 
+我分别使用了`deepseek-v4-pro`和`deepseek-v4-flash`模型。如果你想使用其他模型，别忘了在`goal-orch.md`和`goal-worker.md`的`frontmatter`里更换一下。
+
 使用方法：
 1. 将`.opencode/commands/`和`.opencode/agents/`下的文件分别复制到`~/.config/opencode/commands/`和`~/.config/opencode/agents/`目录下，重启OpenCode。
 2. 或者直接将`.opencode/`整个目录直接复制到你的项目根目录下，重启OpenCode。

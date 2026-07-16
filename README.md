@@ -1,4 +1,4 @@
-This is the source code for my latest article [No Plugins Needed, I Built a Fully Automated Coding Loop in OpenCode](https://www.dataleadsfuture.com/no-plugins-needed-i-built-a-fully-automated-coding-loop-in-opencode/).
+This is the source code for my latest article [**No Plugins Needed, I Built a Fully Automated Coding Loop in OpenCode**](https://www.dataleadsfuture.com/no-plugins-needed-i-built-a-fully-automated-coding-loop-in-opencode/).
 
 The branches starting with `test/` are tests I ran using the `/goal` command in OpenCode.
 
